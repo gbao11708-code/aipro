@@ -1,48 +1,243 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Assistant Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  /* GIỮ NGUYÊN TOÀN BỘ CSS CỦA BẠN */
+  :root { --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a; --accent: #00ffaa; --accent2: #7c3aed; --accent3: #f59e0b; --text: #e8e8f0; --muted: #6b6b80; --error: #ff4560; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 20%, rgba(0,255,170,0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.04) 0%, transparent 50%); animation: bgPulse 8s ease-in-out infinite alternate; pointer-events: none; z-index: 0; }
+  @keyframes bgPulse { 0% { transform: scale(1) rotate(0deg); } 100% { transform: scale(1.1) rotate(2deg); } }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+  .modal-overlay.hidden { display: none; }
+  .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; width: 480px; max-width: 90vw; box-shadow: 0 32px 80px rgba(0,0,0,0.6); }
+  .modal-box h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .modal-box h2 span { color: var(--accent); }
+  .modal-box p { color: var(--muted); font-size: 13px; font-family: 'Space Mono', monospace; margin-bottom: 20px; line-height: 1.6; }
+  .modal-note { background: rgba(0,255,170,0.06); border: 1px solid rgba(0,255,170,0.2); border-radius: 8px; padding: 12px 14px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); margin-bottom: 20px; line-height: 1.7; }
+  header { position: relative; z-index: 10; padding: 24px 32px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); }
+  .logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; animation: logoSpin 10s linear infinite; }
+  @keyframes logoSpin { 0%, 90% { transform: rotate(0deg); } 95% { transform: rotate(360deg); } 100% { transform: rotate(360deg); } }
+  header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  header h1 span { color: var(--accent); }
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 73px); }
+  .sidebar { border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .sidebar-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; padding: 8px 12px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; font-weight: 600; font-size: 14px; }
+  .nav-item:hover { background: var(--surface2); border-color: var(--border); }
+  .nav-item.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .nav-item .icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+  .panel { display: none; flex-direction: column; height: 100%; animation: fadeIn 0.3s ease; }
+  .panel.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .panel-header { padding: 24px 32px 20px; border-bottom: 1px solid var(--border); }
+  .panel-header h2 { font-size: 24px; font-weight: 800; }
+  .panel-header p { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: 'Space Mono', monospace; }
+  .panel-body { flex: 1; padding: 24px 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  textarea, input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 14px 16px; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; resize: vertical; transition: border-color 0.2s; outline: none; }
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,255,170,0.08); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00e699; transform: translateY(-1px); }
+  .result-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; min-height: 100px; white-space: pre-wrap; font-size: 14px; line-height: 1.7; position: relative; }
+  .result-box.loading::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent)); background-size: 200% 100%; animation: shimmer 1.5s linear infinite; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; position: relative; }
+  #imagePreview { max-width: 100%; max-height: 200px; border-radius: 8px; display: none; margin: 10px auto; }
+  .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 24px 32px; }
+  .message { display: flex; gap: 12px; }
+  .message.user { flex-direction: row-reverse; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .bubble { max-width: 70%; padding: 12px 16px; border-radius: 12px; font-size: 14px; }
+  .message.ai .bubble { background: var(--surface); border: 1px solid var(--border); }
+  .message.user .bubble { background: rgba(0,255,170,0.1); border: 1px solid rgba(0,255,170,0.2); }
+  .chat-input-area { padding: 16px 32px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 16px; border-radius: 10px; }
+  .stats { display: flex; gap: 24px; padding: 12px 0; }
+  .stat-value { font-size: 20px; font-weight: 800; color: var(--accent); }
+</style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center p-4">
-    <div class="w-full max-w-2xl bg-slate-800 rounded-xl shadow-2xl p-6 mt-10">
-        <h1 class="text-2xl font-bold mb-4 text-cyan-400">✨ AI Assistant Pro (Gemini)</h1>
-        
-        <div id="chat-box" class="h-96 overflow-y-auto mb-4 p-4 bg-slate-900 rounded-lg space-y-4">
-            <div class="text-gray-400 text-sm">Hệ thống sẵn sàng. Nhập tin nhắn bên dưới...</div>
-        </div>
+<body>
 
-        <div class="flex gap-2">
-            <input type="text" id="user-input" class="flex-1 bg-slate-700 border-none rounded-lg p-3 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="Hỏi tôi bất cứ điều gì...">
-            <button onclick="sendMessage()" class="bg-cyan-600 hover:bg-cyan-500 px-6 py-3 rounded-lg font-bold transition">Gửi</button>
+<div class="modal-overlay hidden" id="apiModal">
+  <div class="modal-box">
+    <h2>✦ AI <span>Assistant</span> Pro</h2>
+    <p>Hệ thống đã sẵn sàng kết nối qua Vercel.</p>
+    <button class="btn btn-primary" onclick="init()" style="width:100%">Tiếp tục</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo">✦</div>
+  <h1>AI <span>Assistant</span> Pro</h1>
+</header>
+
+<div class="app">
+  <nav class="sidebar">
+    <div class="sidebar-label">Chức năng</div>
+    <div class="nav-item active" onclick="switchPanel('summarize', this)">
+      <div class="icon">📝</div>Tóm tắt văn bản
+    </div>
+    <div class="nav-item" onclick="switchPanel('image', this)">
+      <div class="icon">🖼️</div>Nhận diện hình ảnh
+    </div>
+    <div class="nav-item" onclick="switchPanel('translate', this)">
+      <div class="icon">🌐</div>Dịch thuật AI
+    </div>
+    <div class="nav-item" onclick="switchPanel('chat', this)">
+      <div class="icon">💬</div>Chatbot tư vấn
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="panel active" id="panel-summarize">
+      <div class="panel-header"><h2>📝 Tóm tắt văn bản</h2><p>// Nhập văn bản dài → AI tóm tắt</p></div>
+      <div class="panel-body">
+        <textarea id="sumText" placeholder="Dán văn bản dài vào đây..."></textarea>
+        <div class="row">
+          <select id="sumLength">
+            <option value="ngắn gọn">Tóm tắt ngắn</option>
+            <option value="chi tiết" selected>Tóm tắt chi tiết</option>
+          </select>
+          <button class="btn btn-primary" onclick="runSummarize()" id="sumBtn">✦ Tóm tắt ngay</button>
         </div>
+        <div id="sumResultWrap" style="display:none"><div class="result-box" id="sumResult"></div></div>
+      </div>
     </div>
 
-    <script>
-        async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const chatBox = document.getElementById('chat-box');
-            if (!input.value.trim()) return;
+    <div class="panel" id="panel-image">
+      <div class="panel-header"><h2>🖼️ Nhận diện hình ảnh</h2><p>// Phân tích nội dung ảnh</p></div>
+      <div class="panel-body">
+        <div class="upload-area" onclick="document.getElementById('imageFile').click()">
+          <input type="file" id="imageFile" accept="image/*" onchange="previewImage(event)" style="display:none">
+          <div id="uploadContent">📸 Click để chọn ảnh</div>
+          <img id="imagePreview">
+        </div>
+        <button class="btn btn-primary" onclick="runImageAnalysis()" id="imgBtn">✦ Phân tích ảnh</button>
+        <div id="imgResultWrap" style="display:none"><div class="result-box" id="imgResult"></div></div>
+      </div>
+    </div>
 
-            const userMsg = input.value;
-            chatBox.innerHTML += `<div class="text-right"><span class="bg-cyan-700 px-3 py-2 rounded-lg inline-block">${userMsg}</span></div>`;
-            input.value = '';
+    <div class="panel" id="panel-translate">
+      <div class="panel-header"><h2>🌐 Dịch thuật AI</h2></div>
+      <div class="panel-body">
+        <textarea id="transText" placeholder="Nhập văn bản cần dịch..."></textarea>
+        <div class="row">
+          <select id="targetLang"><option value="Tiếng Anh">Tiếng Anh</option><option value="Tiếng Việt" selected>Tiếng Việt</option></select>
+          <button class="btn btn-primary" onclick="runTranslate()" id="transBtn">✦ Dịch ngay</button>
+        </div>
+        <div id="transResultWrap" style="display:none"><div class="result-box" id="transResult"></div></div>
+      </div>
+    </div>
 
-            try {
-                const response = await fetch('/api/claude', { // Vẫn giữ đường dẫn này để khớp với file cũ
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: userMsg })
-                });
-                const data = await response.json();
-                chatBox.innerHTML += `<div class="text-left"><span class="bg-slate-700 px-3 py-2 rounded-lg inline-block text-cyan-300">AI: ${data.reply}</span></div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (e) {
-                chatBox.innerHTML += `<div class="text-red-400">Lỗi kết nối rồi bạn ơi!</div>`;
-            }
-        }
-    </script>
+    <div class="panel" id="panel-chat">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <textarea id="chatInput" placeholder="Hỏi tôi bất cứ điều gì..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+        <button class="btn btn-primary" onclick="sendChat()" id="chatBtn">Gửi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// KHU VỰC SỬA LỖI - ĐỊNH NGHĨA CÁC HÀM CÒN THIẾU
+let chatHistory = [];
+
+function init() {
+    console.log("Hệ thống AI Assistant đã khởi động!");
+    const modal = document.getElementById('apiModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function switchPanel(name, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+}
+
+async function callAI(prompt) {
+    const response = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: prompt })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data.reply;
+}
+
+async function runSummarize() {
+    const text = document.getElementById('sumText').value;
+    if(!text) return;
+    const btn = document.getElementById('sumBtn');
+    btn.disabled = true;
+    document.getElementById('sumResultWrap').style.display = 'block';
+    const resBox = document.getElementById('sumResult');
+    resBox.classList.add('loading');
+    try {
+        resBox.innerText = await callAI("Hãy tóm tắt văn bản này thật " + document.getElementById('sumLength').value + ": " + text);
+    } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
+    btn.disabled = false;
+}
+
+async function runTranslate() {
+    const text = document.getElementById('transText').value;
+    const lang = document.getElementById('targetLang').value;
+    const resBox = document.getElementById('transResult');
+    document.getElementById('transResultWrap').style.display = 'block';
+    resBox.classList.add('loading');
+    try {
+        resBox.innerText = await callAI("Dịch văn bản sau sang " + lang + ": " + text);
+    } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
+}
+
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if(!msg) return;
+    const chatBox = document.getElementById('chatMessages');
+    chatBox.innerHTML += `<div class="message user"><div class="bubble">${msg}</div></div>`;
+    input.value = '';
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'message ai';
+    aiDiv.innerHTML = `<div class="bubble">Đang suy nghĩ...</div>`;
+    chatBox.appendChild(aiDiv);
+    try {
+        const reply = await callAI(msg);
+        aiDiv.querySelector('.bubble').innerText = reply;
+    } catch (e) { aiDiv.querySelector('.bubble').innerText = "Lỗi kết nối!"; }
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const img = document.getElementById('imagePreview');
+        img.src = reader.result;
+        img.style.display = 'block';
+        document.getElementById('uploadContent').style.display = 'none';
+    };
+    reader.readAsDataURL(event.target.files[0]);
+}
+
+async function runImageAnalysis() {
+    const resBox = document.getElementById('imgResult');
+    document.getElementById('imgResultWrap').style.display = 'block';
+    resBox.innerText = "Chức năng phân tích ảnh đang được cập nhật cho Gemini...";
+}
+
+// Gọi hàm khởi tạo khi trang load xong
+window.onload = init;
+</script>
 </body>
 </html>
