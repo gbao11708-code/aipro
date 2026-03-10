@@ -129,7 +129,15 @@
       <div class="panel-body">
         <textarea id="transText" placeholder="Nhập văn bản cần dịch..."></textarea>
         <div class="row">
-          <select id="targetLang"><option value="Tiếng Anh">Tiếng Anh</option><option value="Tiếng Việt" selected>Tiếng Việt</option></select>
+          <select id="targetLang">
+  <option value="Tiếng Anh">Tiếng Anh 🇺🇸</option>
+  <option value="Tiếng Việt" selected>Tiếng Việt 🇻🇳</option>
+  <option value="Tiếng Nhật">Tiếng Nhật 🇯🇵</option>
+  <option value="Tiếng Hàn">Tiếng Hàn 🇰🇷</option>
+  <option value="Tiếng Trung">Tiếng Trung 🇨🇳</option>
+  <option value="Tiếng Pháp">Tiếng Pháp 🇫🇷</option>
+  <option value="Tiếng Đức">Tiếng Đức 🇩🇪</option>
+</select>
           <button class="btn btn-primary" onclick="runTranslate()" id="transBtn">✦ Dịch ngay</button>
         </div>
         <div id="transResultWrap" style="display:none"><div class="result-box" id="transResult"></div></div>
@@ -164,14 +172,19 @@ function switchPanel(name, el) {
 }
 
 async function callAI(prompt) {
-    const response = await fetch("/api/claude", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt })
-    });
-    const data = await response.json();
-    if (data.error) throw new Error(data.error);
-    return data.reply;
+    try {
+        const response = await fetch("/api/claude", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: prompt })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        return data.reply;
+    } catch (e) {
+        console.error("Lỗi AI:", e);
+        throw e;
+    }
 }
 
 async function runSummarize() {
