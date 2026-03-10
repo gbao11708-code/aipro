@@ -5,32 +5,38 @@ export default async function handler(req, res) {
   const apiKey = process.env.GEMINI_API_KEY; 
 
   if (!apiKey) {
-    return res.status(500).json({ error: "Thanh niên ơi, chưa cài GEMINI_API_KEY trên Vercel kìa!" });
+    return res.status(500).json({ error: "Chưa có API Key trên Vercel!" });
   }
 
   try {
-    // Sử dụng model gemini-pro để ổn định nhất cho chat và dịch thuật
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    // Sử dụng endpoint v1 và model gemini-1.5-flash chuẩn
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ]
       })
     });
 
     const data = await response.json();
     
+    // Nếu API trả về lỗi từ Google
     if (data.error) {
-      return res.status(400).json({ error: data.error.message });
+      return res.status(data.error.code || 400).json({ error: data.error.message });
     }
 
-    if (!data.candidates || data.candidates.length === 0) {
-      return res.status(500).json({ error: "AI không trả về kết quả, hãy thử lại!" });
+    // Kiểm tra xem có dữ liệu trả về không
+    if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+      const reply = data.candidates[0].content.parts[0].text;
+      res.status(200).json({ reply });
+    } else {
+      res.status(500).json({ error: "AI không trả về nội dung phù hợp." });
     }
-
-    const reply = data.candidates[0].content.parts[0].text;
-    res.status(200).json({ reply });
   } catch (error) {
-    res.status(500).json({ error: "Lỗi kết nối rồi: " + error.message });
+    res.status(500).json({ error: "Lỗi kết nối: " + error.message });
   }
 }
