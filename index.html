@@ -155,11 +155,10 @@
 </div>
 
 <script>
-// KHU VỰC SỬA LỖI - ĐỊNH NGHĨA CÁC HÀM CÒN THIẾU
 let chatHistory = [];
 
 function init() {
-    console.log("Hệ thống AI Assistant đã khởi động!");
+    console.log("Hệ thống AI Assistant đã sẵn sàng!");
     const modal = document.getElementById('apiModal');
     if (modal) modal.classList.add('hidden');
 }
@@ -182,7 +181,7 @@ async function callAI(prompt) {
         if (data.error) throw new Error(data.error);
         return data.reply;
     } catch (e) {
-        console.error("Lỗi AI:", e);
+        console.error("Lỗi:", e);
         throw e;
     }
 }
@@ -191,9 +190,10 @@ async function runSummarize() {
     const text = document.getElementById('sumText').value;
     if(!text) return;
     const btn = document.getElementById('sumBtn');
+    const resBox = document.getElementById('sumResult');
     btn.disabled = true;
     document.getElementById('sumResultWrap').style.display = 'block';
-    const resBox = document.getElementById('sumResult');
+    resBox.innerText = "Đang tóm tắt...";
     resBox.classList.add('loading');
     try {
         resBox.innerText = await callAI("Hãy tóm tắt văn bản này thật " + document.getElementById('sumLength').value + ": " + text);
@@ -204,9 +204,11 @@ async function runSummarize() {
 
 async function runTranslate() {
     const text = document.getElementById('transText').value;
+    if(!text) return;
     const lang = document.getElementById('targetLang').value;
     const resBox = document.getElementById('transResult');
     document.getElementById('transResultWrap').style.display = 'block';
+    resBox.innerText = "Đang dịch...";
     resBox.classList.add('loading');
     try {
         resBox.innerText = await callAI("Dịch văn bản sau sang " + lang + ": " + text);
@@ -218,17 +220,23 @@ async function sendChat() {
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
     if(!msg) return;
+
     const chatBox = document.getElementById('chatMessages');
     chatBox.innerHTML += `<div class="message user"><div class="bubble">${msg}</div></div>`;
     input.value = '';
+    
     const aiDiv = document.createElement('div');
     aiDiv.className = 'message ai';
-    aiDiv.innerHTML = `<div class="bubble">Đang suy nghĩ...</div>`;
+    aiDiv.innerHTML = `<div class="bubble">...</div>`;
     chatBox.appendChild(aiDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
     try {
         const reply = await callAI(msg);
         aiDiv.querySelector('.bubble').innerText = reply;
-    } catch (e) { aiDiv.querySelector('.bubble').innerText = "Lỗi kết nối!"; }
+    } catch (e) { 
+        aiDiv.querySelector('.bubble').innerText = "Lỗi: " + e.message; 
+    }
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
@@ -240,15 +248,14 @@ function previewImage(event) {
         img.style.display = 'block';
         document.getElementById('uploadContent').style.display = 'none';
     };
-    reader.readAsDataURL(event.target.files[0]);
+    if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
 
 async function runImageAnalysis() {
-    const resBox = document.getElementById('imgResult');
-    document.getElementById('imgResultWrap').style.display = 'block';
-    resBox.innerText = "Chức năng phân tích ảnh đang được cập nhật cho Gemini...";
+    alert("Tính năng Vision (nhìn ảnh) cần cấu hình thêm API. Hiện tại bạn có thể chat và dịch thuật trước nhé!");
 }
 
+window.onload = init;
 // Gọi hàm khởi tạo khi trang load xong
 window.onload = init;
 </script>
