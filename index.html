@@ -4,115 +4,198 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Assistant Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a; --accent: #00ffaa; --text: #e8e8f0; --muted: #6b6b80; }
+  /* GIỮ NGUYÊN TOÀN BỘ CSS CỦA BẠN */
+  :root { --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a; --accent: #00ffaa; --accent2: #7c3aed; --accent3: #f59e0b; --text: #e8e8f0; --muted: #6b6b80; --error: #ff4560; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; overflow: hidden; }
-  header { padding: 18px 30px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .app { display: grid; grid-template-columns: 280px 1fr; height: calc(100vh - 65px); }
-  
-  /* Sidebar & History */
-  .sidebar { border-right: 1px solid var(--border); padding: 15px; overflow-y: auto; background: var(--bg); }
-  .nav-group { margin-bottom: 10px; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; color: var(--text); }
-  .nav-item:hover, .nav-item.active { background: var(--surface2); color: var(--accent); }
-  .history-list { padding-left: 35px; margin-top: 5px; display: flex; flex-direction: column; gap: 4px; border-left: 1px solid var(--border); margin-left: 20px; }
-  .history-item { font-size: 12px; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .history-item:hover { color: var(--accent); background: rgba(0,255,170,0.1); }
-
-  .main { overflow-y: auto; padding: 40px; position: relative; }
-  .panel { display: none; max-width: 800px; margin: 0 auto; } 
-  .panel.active { display: block; }
-  
-  textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 15px; border-radius: 12px; min-height: 150px; outline: none; margin-bottom: 20px; font-size: 15px; }
-  .result-box { background: var(--surface2); padding: 25px; border-radius: 15px; line-height: 1.7; border: 1px solid var(--border); min-height: 100px; }
-  .btn { background: var(--accent); color: #000; padding: 14px 28px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,255,170,0.3); }
-
-  /* Chat Interface */
-  .chat-container { display: flex; flex-direction: column; height: 75vh; }
-  .chat-box { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
-  .msg { padding: 12px 18px; border-radius: 15px; max-width: 85%; line-height: 1.5; font-size: 14px; }
-  .msg.user { align-self: flex-end; background: var(--accent); color: #000; font-weight: 600; }
-  .msg.ai { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); }
-  .chat-input-area { display: flex; gap: 10px; align-items: flex-end; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 20%, rgba(0,255,170,0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.04) 0%, transparent 50%); animation: bgPulse 8s ease-in-out infinite alternate; pointer-events: none; z-index: 0; }
+  @keyframes bgPulse { 0% { transform: scale(1) rotate(0deg); } 100% { transform: scale(1.1) rotate(2deg); } }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+  .modal-overlay.hidden { display: none; }
+  .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; width: 480px; max-width: 90vw; box-shadow: 0 32px 80px rgba(0,0,0,0.6); }
+  .modal-box h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .modal-box h2 span { color: var(--accent); }
+  .modal-box p { color: var(--muted); font-size: 13px; font-family: 'Space Mono', monospace; margin-bottom: 20px; line-height: 1.6; }
+  .modal-note { background: rgba(0,255,170,0.06); border: 1px solid rgba(0,255,170,0.2); border-radius: 8px; padding: 12px 14px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); margin-bottom: 20px; line-height: 1.7; }
+  header { position: relative; z-index: 10; padding: 24px 32px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); }
+  .logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; animation: logoSpin 10s linear infinite; }
+  @keyframes logoSpin { 0%, 90% { transform: rotate(0deg); } 95% { transform: rotate(360deg); } 100% { transform: rotate(360deg); } }
+  header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  header h1 span { color: var(--accent); }
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 73px); }
+  .sidebar { border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .sidebar-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; padding: 8px 12px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; font-weight: 600; font-size: 14px; }
+  .nav-item:hover { background: var(--surface2); border-color: var(--border); }
+  .nav-item.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .nav-item .icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+  .panel { display: none; flex-direction: column; height: 100%; animation: fadeIn 0.3s ease; }
+  .panel.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .panel-header { padding: 24px 32px 20px; border-bottom: 1px solid var(--border); }
+  .panel-header h2 { font-size: 24px; font-weight: 800; }
+  .panel-header p { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: 'Space Mono', monospace; }
+  .panel-body { flex: 1; padding: 24px 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  textarea, input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 14px 16px; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; resize: vertical; transition: border-color 0.2s; outline: none; }
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,255,170,0.08); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00e699; transform: translateY(-1px); }
+  .result-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; min-height: 100px; white-space: pre-wrap; font-size: 14px; line-height: 1.7; position: relative; }
+  .result-box.loading::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent)); background-size: 200% 100%; animation: shimmer 1.5s linear infinite; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; position: relative; }
+  #imagePreview { max-width: 100%; max-height: 200px; border-radius: 8px; display: none; margin: 10px auto; }
+  .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 24px 32px; }
+  .message { display: flex; gap: 12px; }
+  .message.user { flex-direction: row-reverse; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .bubble { max-width: 70%; padding: 12px 16px; border-radius: 12px; font-size: 14px; }
+  .message.ai .bubble { background: var(--surface); border: 1px solid var(--border); }
+  .message.user .bubble { background: rgba(0,255,170,0.1); border: 1px solid rgba(0,255,170,0.2); }
+  .chat-input-area { padding: 16px 32px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 16px; border-radius: 10px; }
+  .stats { display: flex; gap: 24px; padding: 12px 0; }
+  .stat-value { font-size: 20px; font-weight: 800; color: var(--accent); }
+  /* Style cho phần lịch sử */
+.history-list {
+  padding-left: 45px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.history-item {
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+.history-item:hover {
+  color: var(--accent);
+  background: rgba(0, 255, 170, 0.05);
+  border-color: rgba(0, 255, 170, 0.1);
+}
 </style>
 </head>
 <body>
 
+<div class="modal-overlay hidden" id="apiModal">
+  <div class="modal-box">
+    <h2>✦ AI <span>Assistant</span> Pro</h2>
+    <p>Hệ thống đã sẵn sàng kết nối qua Vercel.</p>
+    <button class="btn btn-primary" onclick="init()" style="width:100%">Tiếp tục</button>
+  </div>
+</div>
+
 <header>
-  <h2 style="font-weight: 800;">✦ AI <span style="color: var(--accent);">Assistant</span> Pro</h2>
-  <div id="status" style="font-size: 12px; color: var(--muted);">Đang kết nối...</div>
+  <div class="logo">✦</div>
+  <h1>AI <span>Assistant</span> Pro</h1>
 </header>
 
 <div class="app">
-  <nav class="sidebar">
-    <div class="nav-group">
-      <div class="nav-item active" onclick="switchPanel('summarize', this)">📝 Tóm tắt văn bản</div>
-      <div id="hist-summarize" class="history-list"></div>
-    </div>
+ <nav class="sidebar">
+    <div class="sidebar-label">Chức năng</div>
     
-    <div class="nav-group">
-      <div class="nav-item" onclick="switchPanel('vision', this)">🖼️ Nhận diện hình ảnh</div>
-      <div id="hist-vision" class="history-list"></div>
+    <div class="nav-item active" onclick="switchPanel('summarize', this)">
+        <div class="icon">📝</div>Tóm tắt văn bản
     </div>
+    <div id="hist-summarize" class="history-list"></div>
 
-    <div class="nav-group">
-      <div class="nav-item" onclick="switchPanel('translate', this)">🌐 Dịch thuật AI</div>
-      <div id="hist-translate" class="history-list"></div>
+    <div class="nav-item" onclick="switchPanel('image', this)">
+        <div class="icon">🖼️</div>Nhận diện hình ảnh
     </div>
+    <div id="hist-image" class="history-list"></div>
 
-    <div class="nav-group">
-      <div class="nav-item" onclick="switchPanel('chat', this)">💬 Chatbot tư vấn</div>
-      <div id="hist-chat" class="history-list"></div>
+    <div class="nav-item" onclick="switchPanel('translate', this)">
+        <div class="icon">🌐</div>Dịch thuật AI
+    </div>
+    <div id="hist-translate" class="history-list"></div>
+
+    <div class="nav-item" onclick="switchPanel('chat', this)">
+        <div class="icon">💬</div>Chatbot tư vấn
+    </div>
+    <div id="hist-chat" class="history-list"></div>
+</nav>
     </div>
   </nav>
 
   <div class="main">
     <div class="panel active" id="panel-summarize">
-      <h1>Tóm tắt văn bản</h1>
-      <textarea id="sumInput" placeholder="Dán đoạn văn bản dài vào đây để AI tóm tắt..."></textarea>
-      <button class="btn" onclick="processAI('summarize')">Tóm tắt ngay</button>
-      <div class="result-box" id="sumResult">Kết quả sẽ hiển thị ở đây...</div>
+      <div class="panel-header"><h2>📝 Tóm tắt văn bản</h2><p>// Nhập văn bản dài → AI tóm tắt</p></div>
+      <div class="panel-body">
+        <textarea id="sumText" placeholder="Dán văn bản dài vào đây..."></textarea>
+        <div class="row">
+          <select id="sumLength">
+            <option value="ngắn gọn">Tóm tắt ngắn</option>
+            <option value="chi tiết" selected>Tóm tắt chi tiết</option>
+          </select>
+          <button class="btn btn-primary" onclick="runSummarize()" id="sumBtn">✦ Tóm tắt ngay</button>
+        </div>
+        <div id="sumResultWrap" style="display:none"><div class="result-box" id="sumResult"></div></div>
+      </div>
     </div>
 
-    <div class="panel" id="panel-vision">
-      <h1>Nhận diện hình ảnh</h1>
-      <div class="result-box" style="text-align: center; border-style: dashed;">
-        <p>Tính năng này đang được bảo trì để nâng cấp API Vision mới nhất.</p>
-        <p style="font-size: 12px; color: var(--muted); margin-top:10px;">Vui lòng quay lại sau!</p>
+    <div class="panel" id="panel-image">
+      <div class="panel-header"><h2>🖼️ Nhận diện hình ảnh</h2><p>// Phân tích nội dung ảnh</p></div>
+      <div class="panel-body">
+        <div class="upload-area" onclick="document.getElementById('imageFile').click()">
+          <input type="file" id="imageFile" accept="image/*" onchange="previewImage(event)" style="display:none">
+          <div id="uploadContent">📸 Click để chọn ảnh</div>
+          <img id="imagePreview">
+        </div>
+        <button class="btn btn-primary" onclick="runImageAnalysis()" id="imgBtn">✦ Phân tích ảnh</button>
+        <div id="imgResultWrap" style="display:none"><div class="result-box" id="imgResult"></div></div>
       </div>
     </div>
 
     <div class="panel" id="panel-translate">
-      <h1>Dịch thuật AI</h1>
-      <textarea id="transInput" placeholder="Nhập nội dung cần dịch sang tiếng Việt..."></textarea>
-      <button class="btn" onclick="processAI('translate')">Dịch văn bản</button>
-      <div class="result-box" id="transResult">Bản dịch sẽ hiển thị ở đây...</div>
+      <div class="panel-header"><h2>🌐 Dịch thuật AI</h2></div>
+      <div class="panel-body">
+        <textarea id="transText" placeholder="Nhập văn bản cần dịch..."></textarea>
+        <div class="row">
+          <select id="targetLang">
+  <option value="Tiếng Anh">Tiếng Anh 🇺🇸</option>
+  <option value="Tiếng Việt" selected>Tiếng Việt 🇻🇳</option>
+  <option value="Tiếng Nhật">Tiếng Nhật 🇯🇵</option>
+  <option value="Tiếng Hàn">Tiếng Hàn 🇰🇷</option>
+  <option value="Tiếng Trung">Tiếng Trung 🇨🇳</option>
+  <option value="Tiếng Pháp">Tiếng Pháp 🇫🇷</option>
+  <option value="Tiếng Đức">Tiếng Đức 🇩🇪</option>
+</select>
+          <button class="btn btn-primary" onclick="runTranslate()" id="transBtn">✦ Dịch ngay</button>
+        </div>
+        <div id="transResultWrap" style="display:none"><div class="result-box" id="transResult"></div></div>
+      </div>
     </div>
 
     <div class="panel" id="panel-chat">
-      <div class="chat-container">
-        <div class="chat-box" id="chatDisplay">
-          <div class="msg ai">Chào bạn! Mình là trợ lý AI. Bạn cần hỏi gì không?</div>
-        </div>
-        <div class="chat-input-area">
-          <textarea id="chatInput" style="min-height: 60px; margin-bottom: 0;" placeholder="Nhập tin nhắn..."></textarea>
-          <button class="btn" onclick="processAI('chat')">Gửi</button>
-        </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <textarea id="chatInput" placeholder="Hỏi tôi bất cứ điều gì..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+        <button class="btn btn-primary" onclick="sendChat()" id="chatBtn">Gửi</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-let history = JSON.parse(localStorage.getItem('ai_history')) || { summarize: [], vision: [], translate: [], chat: [] };
+let historyData = JSON.parse(localStorage.getItem('ai_pro_history')) || { summarize: [], image: [], translate: [], chat: [] };
 
 function init() {
+    console.log("Hệ thống đã sẵn sàng!");
+    const modal = document.getElementById('apiModal');
+    if (modal) modal.classList.add('hidden');
     renderHistory();
-    document.getElementById('status').innerText = "Hệ thống đã sẵn sàng";
-    document.getElementById('status').style.color = "var(--accent)";
 }
 
 function switchPanel(name, el) {
@@ -122,82 +205,134 @@ function switchPanel(name, el) {
     el.classList.add('active');
 }
 
-async function processAI(type) {
-    let input = "";
-    let prompt = "";
-    let display = null;
-
-    if (type === 'summarize') {
-        input = document.getElementById('sumInput').value;
-        prompt = "Hãy tóm tắt ngắn gọn và súc tích nội dung này: " + input;
-        display = document.getElementById('sumResult');
-    } else if (type === 'translate') {
-        input = document.getElementById('transInput').value;
-        prompt = "Dịch chính xác nội dung sau sang tiếng Việt: " + input;
-        display = document.getElementById('transResult');
-    } else if (type === 'chat') {
-        input = document.getElementById('chatInput').value;
-        prompt = input;
-        document.getElementById('chatDisplay').innerHTML += `<div class="msg user">${input}</div>`;
-        document.getElementById('chatInput').value = "";
-    }
-
-    if (!input && type !== 'chat') return;
-    if (display) display.innerText = "Đang suy nghĩ...";
-
-    try {
-        const res = await fetch("/api/claude", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        const reply = data.reply || data.error;
-
-        if (display) display.innerText = reply;
-        if (type === 'chat') {
-            document.getElementById('chatDisplay').innerHTML += `<div class="msg ai">${reply}</div>`;
-            document.getElementById('chatDisplay').scrollTop = document.getElementById('chatDisplay').scrollHeight;
-        }
-
-        saveHistory(type, input, reply);
-    } catch (e) {
-        alert("Lỗi kết nối: " + e.message);
-    }
+// Hàm gọi AI hỗ trợ cả văn bản và hình ảnh
+async function callAI(prompt, base64Image = null) {
+    const response = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, image: base64Image })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data.reply;
 }
 
-function saveHistory(type, input, output) {
-    const entry = { title: input.substring(0, 20) + "...", fullIn: input, fullOut: output };
-    history[type].unshift(entry);
-    if (history[type].length > 5) history[type].pop();
-    localStorage.setItem('ai_history', JSON.stringify(history));
+// 📝 TÓM TẮT
+async function runSummarize() {
+    const text = document.getElementById('sumText').value;
+    if(!text) return;
+    const resBox = document.getElementById('sumResult');
+    document.getElementById('sumResultWrap').style.display = 'block';
+    resBox.innerText = "Đang xử lý...";
+    resBox.classList.add('loading');
+    try {
+        const reply = await callAI("Tóm tắt " + document.getElementById('sumLength').value + ": " + text);
+        resBox.innerText = reply;
+        saveToHistory('summarize', text, reply);
+    } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
+}
+
+// 🖼️ NHẬN DIỆN HÌNH ẢNH
+async function runImageAnalysis() {
+    const file = document.getElementById('imageFile').files[0];
+    if(!file) return alert("Vui lòng chọn ảnh!");
+    const resBox = document.getElementById('imgResult');
+    document.getElementById('imgResultWrap').style.display = 'block';
+    resBox.innerText = "Đang phân tích...";
+    resBox.classList.add('loading');
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        try {
+            const reply = await callAI("Mô tả bức ảnh này thật chi tiết", base64);
+            resBox.innerText = reply;
+            saveToHistory('image', "Phân tích ảnh: " + file.name, reply);
+        } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+        resBox.classList.remove('loading');
+    };
+    reader.readAsDataURL(file);
+}
+
+// 🌐 DỊCH THUẬT
+async function runTranslate() {
+    const text = document.getElementById('transText').value;
+    if(!text) return;
+    const lang = document.getElementById('targetLang').value;
+    const resBox = document.getElementById('transResult');
+    document.getElementById('transResultWrap').style.display = 'block';
+    resBox.innerText = "Đang dịch...";
+    resBox.classList.add('loading');
+    try {
+        const reply = await callAI("Dịch sang " + lang + ": " + text);
+        resBox.innerText = reply;
+        saveToHistory('translate', text, reply);
+    } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
+}
+
+// 💬 CHATBOT
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if(!msg) return;
+    const chatBox = document.getElementById('chatMessages');
+    chatBox.innerHTML += `<div class="message user"><div class="bubble">${msg}</div></div>`;
+    input.value = '';
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'message ai';
+    aiDiv.innerHTML = `<div class="bubble">...</div>`;
+    chatBox.appendChild(aiDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    try {
+        const reply = await callAI(msg);
+        aiDiv.querySelector('.bubble').innerText = reply;
+        saveToHistory('chat', msg, reply);
+    } catch (e) { aiDiv.querySelector('.bubble').innerText = "Lỗi: " + e.message; }
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// QUẢN LÝ LỊCH SỬ (Render vào sidebar)
+function saveToHistory(type, input, output) {
+    const item = { id: Date.now(), title: input.substring(0, 20) + "...", fullIn: input, fullOut: output };
+    historyData[type].unshift(item);
+    if(historyData[type].length > 5) historyData[type].pop();
+    localStorage.setItem('ai_pro_history', JSON.stringify(historyData));
     renderHistory();
 }
 
 function renderHistory() {
-    ['summarize', 'vision', 'translate', 'chat'].forEach(type => {
-        const box = document.getElementById('hist-' + type);
-        if(box) {
-            box.innerHTML = history[type].map(item => `
-                <div class="history-item" onclick="viewOld('${type}', \`${encodeURIComponent(item.fullIn)}\`, \`${encodeURIComponent(item.fullOut)}\`)">
-                    • ${item.title}
-                </div>
+    ['summarize', 'image', 'translate', 'chat'].forEach(type => {
+        const container = document.getElementById('hist-' + type);
+        if(container) {
+            container.innerHTML = historyData[type].map(item => `
+                <div class="history-item" onclick="loadHistory('${type}', ${item.id})">• ${item.title}</div>
             `).join('');
         }
     });
 }
 
-function viewOld(type, inStr, outStr) {
-    const input = decodeURIComponent(inStr);
-    const output = decodeURIComponent(outStr);
-    if (type === 'summarize') {
-        document.getElementById('sumInput').value = input;
-        document.getElementById('sumResult').innerText = output;
-    } else if (type === 'translate') {
-        document.getElementById('transInput').value = input;
-        document.getElementById('transResult').innerText = output;
-    }
+function loadHistory(type, id) {
+    const item = historyData[type].find(i => i.id === id);
+    if(type === 'summarize') { document.getElementById('sumText').value = item.fullIn; document.getElementById('sumResult').innerText = item.fullOut; document.getElementById('sumResultWrap').style.display = 'block'; }
+    if(type === 'translate') { document.getElementById('transText').value = item.fullIn; document.getElementById('transResult').innerText = item.fullOut; document.getElementById('transResultWrap').style.display = 'block'; }
+    if(type === 'image') { document.getElementById('imgResult').innerText = item.fullOut; document.getElementById('imgResultWrap').style.display = 'block'; }
 }
+
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const img = document.getElementById('imagePreview');
+        img.src = reader.result;
+        img.style.display = 'block';
+        document.getElementById('uploadContent').style.display = 'none';
+    };
+    if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+}
+
+window.onload = init;
+
 
 window.onload = init;
 </script>
