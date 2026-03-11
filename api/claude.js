@@ -9,11 +9,11 @@ export default async function handler(req, res) {
   const { prompt } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!apiKey) return res.status(500).json({ error: "Thiếu API Key!" });
+  if (!apiKey) return res.status(500).json({ error: "Thiếu API Key trên Vercel!" });
 
   try {
-    // Đã cập nhật sang model mới nhất gemini-2.5-flash của Google
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    // Sử dụng v1 thay vì v1beta để đảm bảo độ tương thích cao nhất
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -22,12 +22,9 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    if (data.error) return res.status(400).json({ error: data.error.message });
 
-    if (data.error) {
-      return res.status(400).json({ error: data.error.message });
-    }
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI không phản hồi, thử lại nhé!";
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI không trả lời được câu này.";
     res.status(200).json({ reply });
   } catch (error) {
     res.status(500).json({ error: "Lỗi kết nối Server: " + error.message });
