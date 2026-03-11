@@ -12,8 +12,8 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: "Thiếu API Key!" });
 
   try {
-    // Đổi sang gemini-pro để đảm bảo API Key nào cũng hoạt động
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    // Đã cập nhật sang model mới nhất gemini-2.5-flash của Google
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
