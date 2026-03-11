@@ -162,25 +162,17 @@
 </div>
 
 <script>
-// Biến lưu trữ lịch sử - Đặt tên key riêng để không bị đè dữ liệu cũ lỗi
-let historyData = JSON.parse(localStorage.getItem('ai_pro_history_v2')) || { summarize: [], image: [], translate: [], chat: [] };
+// Khởi tạo dữ liệu lịch sử
+let historyData = JSON.parse(localStorage.getItem('ai_pro_data')) || { summarize: [], image: [], translate: [], chat: [] };
 
 function init() {
     console.log("Hệ thống AI Pro đã sẵn sàng!");
     const modal = document.getElementById('apiModal');
     if (modal) modal.classList.add('hidden');
-    renderHistory(); 
+    renderHistory();
 }
 
-// Giữ nguyên hàm switchPanel của bạn
-function switchPanel(name, el) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('panel-' + name).classList.add('active');
-    el.classList.add('active');
-}
-
-// Hàm gọi AI chuẩn Flash 2.0+
+// Hàm gọi API dùng chung
 async function callAI(prompt, base64Image = null) {
     const response = await fetch("/api/claude", {
         method: "POST",
@@ -192,30 +184,72 @@ async function callAI(prompt, base64Image = null) {
     return data.reply;
 }
 
-// Các hàm runSummarize, runTranslate... cần được gọi kèm saveHistory
+// 1. Chức năng Tóm tắt
 async function runSummarize() {
     const text = document.getElementById('sumText').value;
-    if(!text) return;
     const resBox = document.getElementById('sumResult');
-    document.getElementById('sumResultWrap').style.display = 'block';
+    if(!text) return;
     resBox.innerText = "Đang xử lý...";
-    resBox.classList.add('loading');
     try {
-        const reply = await callAI("Tóm tắt nội dung này: " + text);
+        const reply = await callAI("Tóm tắt nội dung sau: " + text);
         resBox.innerText = reply;
-        saveHistory('summarize', text, reply); // LƯU LỊCH SỬ
+        saveHistory('summarize', text, reply);
     } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
-    resBox.classList.remove('loading');
 }
 
-// Hàm render lịch sử vào Sidebar (đã fix để hiện ra)
+// 2. Chức năng Dịch thuật (Sửa lỗi runTranslate is not defined)
+async function runTranslate() {
+    const text = document.getElementById('transText').value;
+    const resBox = document.getElementById('transResult');
+    const lang = document.getElementById('targetLang')?.value || "Tiếng Việt";
+    if(!text) return;
+    resBox.innerText = "Đang dịch...";
+    try {
+        const reply = await callAI(`Dịch sang ${lang}: ` + text);
+        resBox.innerText = reply;
+        saveHistory('translate', text, reply);
+    } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+}
+
+// 3. Chức năng Chat (Sửa lỗi sendChat is not defined)
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const chatBox = document.getElementById('chatMessages');
+    const msg = input.value.trim();
+    if(!msg) return;
+
+    chatBox.innerHTML += `<div class="message user"><div class="bubble">${msg}</div></div>`;
+    input.value = '';
+    
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'message ai';
+    aiDiv.innerHTML = `<div class="bubble">...</div>`;
+    chatBox.appendChild(aiDiv);
+
+    try {
+        const reply = await callAI(msg);
+        aiDiv.querySelector('.bubble').innerText = reply;
+        saveHistory('chat', msg, reply);
+    } catch (e) { aiDiv.querySelector('.bubble').innerText = "Lỗi kết nối!"; }
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// 4. Lịch sử (Hiển thị dưới mỗi mục sidebar)
+function saveHistory(type, input, output) {
+    const item = { id: Date.now(), title: input.substring(0, 15) + "...", fullIn: input, fullOut: output };
+    historyData[type].unshift(item);
+    if(historyData[type].length > 5) historyData[type].pop();
+    localStorage.setItem('ai_pro_data', JSON.stringify(historyData));
+    renderHistory();
+}
+
 function renderHistory() {
     ['summarize', 'image', 'translate', 'chat'].forEach(type => {
         const container = document.getElementById('hist-' + type);
         if (container) {
             container.innerHTML = historyData[type].map(item => `
                 <div class="history-item" onclick="loadHistory('${type}', ${item.id})" 
-                     style="font-size: 11px; color: var(--muted); cursor: pointer; padding: 4px 10px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                     style="font-size: 11px; color: #6b6b80; padding: 4px 10px; cursor: pointer;">
                     • ${item.title}
                 </div>
             `).join('');
@@ -223,35 +257,13 @@ function renderHistory() {
     });
 }
 
-function saveHistory(type, input, output) {
-    const item = { 
-        id: Date.now(), 
-        title: input.substring(0, 18) + "...", 
-        fullIn: input, 
-        fullOut: output 
-    };
-    historyData[type].unshift(item);
-    if(historyData[type].length > 5) historyData[type].pop();
-    localStorage.setItem('ai_pro_history_v2', JSON.stringify(historyData));
-    renderHistory();
-}
-
 function loadHistory(type, id) {
     const item = historyData[type].find(i => i.id === id);
     if (!item) return;
-    
-    // Tự động chuyển tab tương ứng
-    const navItem = document.querySelector(`.nav-item[onclick*="${type}"]`);
-    if(navItem) switchPanel(type, navItem);
-
-    if(type === 'summarize') {
-        document.getElementById('sumText').value = item.fullIn;
-        document.getElementById('sumResult').innerText = item.fullOut;
-        document.getElementById('sumResultWrap').style.display = 'block';
-    }
-    // Tương tự cho các chức năng khác...
+    // Điền lại dữ liệu cũ vào các box tương ứng của bạn
+    if(type === 'summarize') document.getElementById('sumText').value = item.fullIn;
+    if(type === 'translate') document.getElementById('transText').value = item.fullIn;
 }
-
 
 window.onload = init;
 </script>
