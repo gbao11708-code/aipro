@@ -31,7 +31,6 @@
     .nav-item.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
     .nav-item .icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
     
-    /* STYLE MỚI CHO PHẦN LỊCH SỬ */
     .history-list { padding-left: 45px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
     .history-item { font-size: 11px; color: var(--muted); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 8px; border-radius: 6px; }
     .history-item:hover { color: var(--accent); background: rgba(0, 255, 170, 0.05); }
@@ -161,45 +160,169 @@
   </div>
 </div>
 
-<script>export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+<script>
+// 1. DỮ LIỆU LỊCH SỬ
+let historyData = JSON.parse(localStorage.getItem('ai_pro_vault_v3')) || { summarize: [], image: [], translate: [], chat: [] };
 
-  const { prompt, image } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  try {
-    let parts = [{ text: prompt }];
-    
-    if (image) {
-      // Làm sạch chuỗi Base64 để tránh lỗi 400
-      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-      parts.push({
-        inline_data: {
-          mime_type: "image/jpeg",
-          data: base64Data
-        }
-      });
-    }
-
-    // Sử dụng v1beta với model ổn định nhất cho Flash
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts }] })
-    });
-
-    const data = await response.json();
-    if (data.error) return res.status(400).json({ error: data.error.message });
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI không phản hồi.";
-    res.status(200).json({ reply });
-  } catch (error) {
-    res.status(500).json({ error: "Lỗi Server: " + error.message });
-  }
+// 2. KHỞI TẠO
+function init() {
+    const modal = document.getElementById('apiModal');
+    if (modal) modal.classList.add('hidden');
+    renderHistory();
 }
+
+// 3. CHUYỂN PANEL
+function switchPanel(name, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const targetPanel = document.getElementById('panel-' + name);
+    if (targetPanel) {
+        targetPanel.classList.add('active');
+        el.classList.add('active');
+    }
+}
+
+// 4. GỌI AI CHUNG
+async function callAI(prompt, base64Image = null) {
+    const response = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, image: base64Image })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data.reply;
+}
+
+// 5. CÁC HÀM CHỨC NĂNG
+async function runSummarize() {
+    const text = document.getElementById('sumText').value;
+    const resBox = document.getElementById('sumResult');
+    const wrap = document.getElementById('sumResultWrap');
+    if(!text) return;
+    wrap.style.display = 'block';
+    resBox.innerText = "Đang tóm tắt...";
+    resBox.classList.add('loading');
+    try {
+        const reply = await callAI("Tóm tắt nội dung này: " + text);
+        resBox.innerText = reply;
+        saveHistory('summarize', text, reply);
+    } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
+}
+
+async function runTranslate() {
+    const text = document.getElementById('transText').value;
+    const resBox = document.getElementById('transResult');
+    const wrap = document.getElementById('transResultWrap');
+    const lang = document.getElementById('targetLang')?.value || "Tiếng Việt";
+    if(!text) return;
+    wrap.style.display = 'block';
+    resBox.innerText = "Đang dịch...";
+    resBox.classList.add('loading');
+    try {
+        const reply = await callAI(`Dịch văn bản sau sang ${lang}: ` + text);
+        resBox.innerText = reply;
+        saveHistory('translate', text, reply);
+    } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
+}
+
+async function runImageAnalysis() {
+    const fileInput = document.getElementById('imageFile');
+    const resBox = document.getElementById('imgResult');
+    const wrap = document.getElementById('imgResultWrap');
+    if (!fileInput.files[0]) return alert("Vui lòng chọn ảnh!");
+
+    wrap.style.display = 'block';
+    resBox.innerText = "Đang phân tích hình ảnh...";
+    resBox.classList.add('loading');
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+        try {
+            const reply = await callAI("Mô tả chi tiết hình ảnh này:", reader.result);
+            resBox.innerText = reply;
+            saveHistory('image', "Ảnh đã phân tích", reply);
+        } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+        resBox.classList.remove('loading');
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+}
+
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const chatBox = document.getElementById('chatMessages');
+    const msg = input.value.trim();
+    if(!msg) return;
+
+    chatBox.innerHTML += `<div class="message user"><div class="bubble">${msg}</div></div>`;
+    input.value = '';
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'message ai';
+    aiDiv.innerHTML = `<div class="bubble">...</div>`;
+    chatBox.appendChild(aiDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        const reply = await callAI(msg);
+        aiDiv.querySelector('.bubble').innerText = reply;
+        saveHistory('chat', msg, reply);
+    } catch (e) { aiDiv.querySelector('.bubble').innerText = "Lỗi kết nối!"; }
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// 6. LỊCH SỬ
+function saveHistory(type, input, output) {
+    const item = { id: Date.now(), title: input.substring(0, 15) + "...", fullIn: input, fullOut: output };
+    historyData[type].unshift(item);
+    if(historyData[type].length > 5) historyData[type].pop();
+    localStorage.setItem('ai_pro_vault_v3', JSON.stringify(historyData));
+    renderHistory();
+}
+
+function renderHistory() {
+    ['summarize', 'image', 'translate', 'chat'].forEach(type => {
+        const container = document.getElementById('hist-' + type);
+        if (container) {
+            container.innerHTML = historyData[type].map(item => `
+                <div class="history-item" onclick="event.stopPropagation(); loadHistory('${type}', ${item.id})">
+                    • ${item.title}
+                </div>
+            `).join('');
+        }
+    });
+}
+
+function loadHistory(type, id) {
+    const item = historyData[type].find(i => i.id === id);
+    if (!item) return;
+    if(type === 'summarize') {
+        document.getElementById('sumText').value = item.fullIn;
+        document.getElementById('sumResult').innerText = item.fullOut;
+        document.getElementById('sumResultWrap').style.display = 'block';
+    } else if(type === 'translate') {
+        document.getElementById('transText').value = item.fullIn;
+        document.getElementById('transResult').innerText = item.fullOut;
+        document.getElementById('transResultWrap').style.display = 'block';
+    } else if(type === 'image') {
+        document.getElementById('imgResult').innerText = item.fullOut;
+        document.getElementById('imgResultWrap').style.display = 'block';
+    }
+}
+
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const img = document.getElementById('imagePreview');
+        img.src = reader.result;
+        img.style.display = 'block';
+        document.getElementById('uploadContent').style.display = 'none';
+    };
+    if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+}
+
+window.onload = init;
 </script>
 </body>
 </html>
