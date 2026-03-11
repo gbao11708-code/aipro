@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     let parts = [{ text: prompt }];
     
     if (image) {
-      // Loại bỏ phần header của base64 nếu có (ví dụ: data:image/jpeg;base64,...)
-      const base64Data = image.split(',')[1] || image;
+      // Làm sạch chuỗi Base64 để tránh lỗi 400
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
       parts.push({
         inline_data: {
           mime_type: "image/jpeg",
@@ -21,7 +21,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key=${apiKey}`, {
+    // Sử dụng v1beta với model ổn định nhất cho Flash
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts }] })
@@ -33,6 +34,6 @@ export default async function handler(req, res) {
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI không phản hồi.";
     res.status(200).json({ reply });
   } catch (error) {
-    res.status(500).json({ error: "Lỗi kết nối: " + error.message });
+    res.status(500).json({ error: "Lỗi Server: " + error.message });
   }
 }
