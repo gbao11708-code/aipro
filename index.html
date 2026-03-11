@@ -375,6 +375,43 @@ function previewImage(event) {
     };
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
+function loadHistory(type, id) {
+    const item = historyData[type].find(i => i.id === id);
+    if (!item) return;
+
+    // 1. Tự động chuyển sang Panel tương ứng nếu đang ở Panel khác
+    const navItem = document.querySelector(`.nav-item[onclick*="'${type}'"]`);
+    if (navItem) {
+        // Tắt hết active cũ
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        // Bật active cho panel lịch sử
+        document.getElementById('panel-' + type).classList.add('active');
+        navItem.classList.add('active');
+    }
+
+    // 2. Đổ dữ liệu lịch sử vào giao diện
+    if(type === 'summarize') {
+        document.getElementById('sumText').value = item.fullIn;
+        document.getElementById('sumResult').innerText = item.fullOut;
+        document.getElementById('sumResultWrap').style.display = 'block';
+    } else if(type === 'translate') {
+        document.getElementById('transText').value = item.fullIn;
+        document.getElementById('transResult').innerText = item.fullOut;
+        document.getElementById('transResultWrap').style.display = 'block';
+    } else if(type === 'image') {
+        document.getElementById('imgResult').innerText = item.fullOut;
+        document.getElementById('imgResultWrap').style.display = 'block';
+    } else if(type === 'chat') {
+        // ĐÂY LÀ PHẦN FIX CHO CHATBOT
+        const chatBox = document.getElementById('chatMessages');
+        chatBox.innerHTML = `
+            <div class="message user"><div class="bubble">${item.fullIn}</div></div>
+            <div class="message ai"><div class="bubble">${item.fullOut}</div></div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+}
 
 window.onload = init;
 </script>
