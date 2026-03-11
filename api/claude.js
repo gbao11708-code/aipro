@@ -1,23 +1,19 @@
 export default async function handler(req, res) {
-  // Cấu hình CORS để trình duyệt không chặn yêu cầu
-  res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-  
-  const { prompt } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY; 
 
-  if (!apiKey) {
-    return res.status(500).json({ error: "Chưa cài GEMINI_API_KEY trên Vercel!" });
-  }
+  const { prompt } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) return res.status(500).json({ error: "Thiếu API Key!" });
 
   try {
-    // Sử dụng endpoint chuẩn nhất hiện tại
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Đổi sang gemini-pro để đảm bảo API Key nào cũng hoạt động
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -26,7 +22,7 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    
+
     if (data.error) {
       return res.status(400).json({ error: data.error.message });
     }
