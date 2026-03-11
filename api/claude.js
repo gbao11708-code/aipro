@@ -9,11 +9,18 @@ export default async function handler(req, res) {
 
   try {
     let parts = [{ text: prompt }];
+    
     if (image) {
-      parts.push({ inline_data: { mime_type: "image/jpeg", data: image } });
+      // Loại bỏ phần header của base64 nếu có (ví dụ: data:image/jpeg;base64,...)
+      const base64Data = image.split(',')[1] || image;
+      parts.push({
+        inline_data: {
+          mime_type: "image/jpeg",
+          data: base64Data
+        }
+      });
     }
 
-    // Sử dụng v1beta với gemini-2.0-flash-latest để đảm bảo chạy được mọi tính năng
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

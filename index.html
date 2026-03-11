@@ -161,26 +161,20 @@
   </div>
 </div>
 
-<script>
-// 1. DỮ LIỆU LỊCH SỬ (Dùng key mới để tránh xung đột)
+<script>// 1. DỮ LIỆU LỊCH SỬ
 let historyData = JSON.parse(localStorage.getItem('ai_pro_vault_v3')) || { summarize: [], image: [], translate: [], chat: [] };
 
-// 2. KHỞI TẠO HỆ THỐNG
+// 2. KHỞI TẠO
 function init() {
-    console.log("Hệ thống AI Pro đã sẵn sàng!");
     const modal = document.getElementById('apiModal');
     if (modal) modal.classList.add('hidden');
     renderHistory();
 }
 
-// 3. HÀM CHUYỂN PANEL (HÀM NÀY BỊ THIẾU KHIẾN BẠN KHÔNG BẤM ĐƯỢC)
+// 3. CHUYỂN PANEL
 function switchPanel(name, el) {
-    // Ẩn tất cả các panel
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    // Bỏ active ở tất cả các nút sidebar
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    
-    // Hiện panel được chọn
     const targetPanel = document.getElementById('panel-' + name);
     if (targetPanel) {
         targetPanel.classList.add('active');
@@ -188,7 +182,7 @@ function switchPanel(name, el) {
     }
 }
 
-// 4. HÀM GỌI AI CHUẨN FLASH 2.0
+// 4. GỌI AI CHUNG
 async function callAI(prompt, base64Image = null) {
     const response = await fetch("/api/claude", {
         method: "POST",
@@ -200,30 +194,60 @@ async function callAI(prompt, base64Image = null) {
     return data.reply;
 }
 
-// 5. CÁC CHỨC NĂNG CHÍNH
+// 5. CÁC HÀM CHỨC NĂNG (Đã fix lỗi hiển thị và hàm thiếu)
 async function runSummarize() {
     const text = document.getElementById('sumText').value;
     const resBox = document.getElementById('sumResult');
+    const wrap = document.getElementById('sumResultWrap');
     if(!text) return;
+    wrap.style.display = 'block';
     resBox.innerText = "Đang tóm tắt...";
+    resBox.classList.add('loading');
     try {
         const reply = await callAI("Tóm tắt nội dung này: " + text);
         resBox.innerText = reply;
         saveHistory('summarize', text, reply);
     } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
 }
 
 async function runTranslate() {
     const text = document.getElementById('transText').value;
     const resBox = document.getElementById('transResult');
+    const wrap = document.getElementById('transResultWrap');
     const lang = document.getElementById('targetLang')?.value || "Tiếng Việt";
     if(!text) return;
+    wrap.style.display = 'block';
     resBox.innerText = "Đang dịch...";
+    resBox.classList.add('loading');
     try {
-        const reply = await callAI(`Dịch sang ${lang}: ` + text);
+        const reply = await callAI(`Dịch văn bản sau sang ${lang}: ` + text);
         resBox.innerText = reply;
         saveHistory('translate', text, reply);
     } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+    resBox.classList.remove('loading');
+}
+
+async function runImageAnalysis() {
+    const fileInput = document.getElementById('imageFile');
+    const resBox = document.getElementById('imgResult');
+    const wrap = document.getElementById('imgResultWrap');
+    if (!fileInput.files[0]) return alert("Vui lòng chọn ảnh!");
+
+    wrap.style.display = 'block';
+    resBox.innerText = "Đang phân tích hình ảnh...";
+    resBox.classList.add('loading');
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+        try {
+            const reply = await callAI("Mô tả chi tiết hình ảnh này:", reader.result);
+            resBox.innerText = reply;
+            saveHistory('image', "Ảnh đã phân tích", reply);
+        } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
+        resBox.classList.remove('loading');
+    };
+    reader.readAsDataURL(fileInput.files[0]);
 }
 
 async function sendChat() {
@@ -238,6 +262,7 @@ async function sendChat() {
     aiDiv.className = 'message ai';
     aiDiv.innerHTML = `<div class="bubble">...</div>`;
     chatBox.appendChild(aiDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
         const reply = await callAI(msg);
@@ -247,7 +272,7 @@ async function sendChat() {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// 6. XỬ LÝ LỊCH SỬ
+// 6. LỊCH SỬ
 function saveHistory(type, input, output) {
     const item = { id: Date.now(), title: input.substring(0, 15) + "...", fullIn: input, fullOut: output };
     historyData[type].unshift(item);
@@ -261,8 +286,7 @@ function renderHistory() {
         const container = document.getElementById('hist-' + type);
         if (container) {
             container.innerHTML = historyData[type].map(item => `
-                <div class="history-item" onclick="event.stopPropagation(); loadHistory('${type}', ${item.id})" 
-                     style="font-size: 11px; color: #6b6b80; padding: 4px 10px; cursor: pointer; border-radius: 4px;">
+                <div class="history-item" onclick="event.stopPropagation(); loadHistory('${type}', ${item.id})">
                     • ${item.title}
                 </div>
             `).join('');
@@ -276,20 +300,24 @@ function loadHistory(type, id) {
     if(type === 'summarize') {
         document.getElementById('sumText').value = item.fullIn;
         document.getElementById('sumResult').innerText = item.fullOut;
+        document.getElementById('sumResultWrap').style.display = 'block';
     } else if(type === 'translate') {
         document.getElementById('transText').value = item.fullIn;
         document.getElementById('transResult').innerText = item.fullOut;
+        document.getElementById('transResultWrap').style.display = 'block';
+    } else if(type === 'image') {
+        document.getElementById('imgResult').innerText = item.fullOut;
+        document.getElementById('imgResultWrap').style.display = 'block';
     }
 }
 
-// 7. XỬ LÝ ẢNH PREVIEW
 function previewImage(event) {
     const reader = new FileReader();
     reader.onload = () => {
         const img = document.getElementById('imagePreview');
         img.src = reader.result;
         img.style.display = 'block';
-        if(document.getElementById('uploadContent')) document.getElementById('uploadContent').style.display = 'none';
+        document.getElementById('uploadContent').style.display = 'none';
     };
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
