@@ -184,28 +184,20 @@
 </div>
 
 <script>
-// 1. DỮ LIỆU LỊCH SỬ
+
+// 1. KHỞI TẠO DỮ LIỆU
 let historyData = JSON.parse(localStorage.getItem('ai_pro_vault_v3')) || { summarize: [], image: [], translate: [], chat: [] };
 
-// 2. KHỞI TẠO
-function init() {
-    const modal = document.getElementById('apiModal');
-    if (modal) modal.classList.add('hidden');
-    renderHistory();
-}
-
-// 3. CHUYỂN PANEL & LÀM MỚI CUỘC TRÒ CHUYỆN
-function switchPanel(name, el) {
+// 2. CÁC HÀM GIAO DIỆN (PHẢI NẰM NGOÀI CÙNG)
+function switchPanel(name, el, isHistory = false) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     
     const targetPanel = document.getElementById('panel-' + name);
     if (targetPanel) {
         targetPanel.classList.add('active');
-        el.classList.add('active');
-        
-        // RESET GIAO DIỆN KHI BẤM VÀO ICON (Tạo cuộc trò chuyện mới)
-        resetPanel(name);
+        if(el) el.classList.add('active');
+        if (!isHistory) resetPanel(name);
     }
 }
 
@@ -213,11 +205,9 @@ function resetPanel(name) {
     if(name === 'summarize') {
         document.getElementById('sumText').value = '';
         document.getElementById('sumResultWrap').style.display = 'none';
-        document.getElementById('sumResult').innerText = '';
     } else if(name === 'translate') {
         document.getElementById('transText').value = '';
         document.getElementById('transResultWrap').style.display = 'none';
-        document.getElementById('transResult').innerText = '';
     } else if(name === 'image') {
         document.getElementById('imageFile').value = '';
         document.getElementById('imagePreview').style.display = 'none';
@@ -229,7 +219,7 @@ function resetPanel(name) {
     }
 }
 
-// 4. GỌI AI CHUNG
+// 3. GỌI AI
 async function callAI(prompt, base64Image = null) {
     const response = await fetch("/api/claude", {
         method: "POST",
@@ -241,58 +231,47 @@ async function callAI(prompt, base64Image = null) {
     return data.reply;
 }
 
-// 5. CÁC HÀM CHỨC NĂNG
+// 4. CHỨC NĂNG CHÍNH
 async function runSummarize() {
     const text = document.getElementById('sumText').value;
     const resBox = document.getElementById('sumResult');
-    const wrap = document.getElementById('sumResultWrap');
     if(!text) return;
-    wrap.style.display = 'block';
-    resBox.innerText = "Đang tóm tắt...";
-    resBox.classList.add('loading');
+    document.getElementById('sumResultWrap').style.display = 'block';
+    resBox.innerText = "Đang xử lý...";
     try {
-        const reply = await callAI("Tóm tắt nội dung này: " + text);
+        const reply = await callAI("Tóm tắt nội dung sau: " + text);
         resBox.innerText = reply;
         saveHistory('summarize', text, reply);
     } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
-    resBox.classList.remove('loading');
 }
 
 async function runTranslate() {
     const text = document.getElementById('transText').value;
     const resBox = document.getElementById('transResult');
-    const wrap = document.getElementById('transResultWrap');
     const lang = document.getElementById('targetLang')?.value || "Tiếng Việt";
     if(!text) return;
-    wrap.style.display = 'block';
+    document.getElementById('transResultWrap').style.display = 'block';
     resBox.innerText = "Đang dịch...";
-    resBox.classList.add('loading');
     try {
-        const reply = await callAI(`Dịch văn bản sau sang ${lang}: ` + text);
+        const reply = await callAI(`Dịch sang ${lang}: ` + text);
         resBox.innerText = reply;
         saveHistory('translate', text, reply);
     } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
-    resBox.classList.remove('loading');
 }
 
 async function runImageAnalysis() {
     const fileInput = document.getElementById('imageFile');
     const resBox = document.getElementById('imgResult');
-    const wrap = document.getElementById('imgResultWrap');
-    if (!fileInput.files[0]) return alert("Vui lòng chọn ảnh!");
-
-    wrap.style.display = 'block';
-    resBox.innerText = "Đang phân tích hình ảnh...";
-    resBox.classList.add('loading');
-
+    if (!fileInput.files[0]) return alert("Hãy chọn ảnh!");
+    document.getElementById('imgResultWrap').style.display = 'block';
+    resBox.innerText = "Đang đọc ảnh...";
     const reader = new FileReader();
     reader.onload = async () => {
         try {
-            const reply = await callAI("Mô tả chi tiết hình ảnh này:", reader.result);
+            const reply = await callAI("Mô tả ảnh này:", reader.result);
             resBox.innerText = reply;
-            saveHistory('image', "Ảnh đã phân tích", reply);
+            saveHistory('image', "Phân tích ảnh", reply);
         } catch (e) { resBox.innerText = "Lỗi: " + e.message; }
-        resBox.classList.remove('loading');
     };
     reader.readAsDataURL(fileInput.files[0]);
 }
@@ -302,24 +281,17 @@ async function sendChat() {
     const chatBox = document.getElementById('chatMessages');
     const msg = input.value.trim();
     if(!msg) return;
-
     chatBox.innerHTML += `<div class="message user"><div class="bubble">${msg}</div></div>`;
     input.value = '';
-    const aiDiv = document.createElement('div');
-    aiDiv.className = 'message ai';
-    aiDiv.innerHTML = `<div class="bubble">...</div>`;
-    chatBox.appendChild(aiDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
     try {
         const reply = await callAI(msg);
-        aiDiv.querySelector('.bubble').innerText = reply;
+        chatBox.innerHTML += `<div class="message ai"><div class="bubble">${reply}</div></div>`;
         saveHistory('chat', msg, reply);
-    } catch (e) { aiDiv.querySelector('.bubble').innerText = "Lỗi kết nối!"; }
+    } catch (e) { chatBox.innerHTML += `<div class="message ai"><div class="bubble">Lỗi kết nối!</div></div>`; }
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// 6. QUẢN LÝ LỊCH SỬ
+// 5. LỊCH SỬ
 function saveHistory(type, input, output) {
     const item = { id: Date.now(), title: input.substring(0, 15) + "...", fullIn: input, fullOut: output };
     historyData[type].unshift(item);
@@ -333,35 +305,24 @@ function renderHistory() {
         const container = document.getElementById('hist-' + type);
         if (container) {
             container.innerHTML = historyData[type].map(item => `
-                <div class="history-item" onclick="event.stopPropagation(); loadHistory('${type}', ${item.id})">
+                <div class="history-item" onclick="loadHistory('${type}', ${item.id})">
                     <span>• ${item.title}</span>
-                    <span class="delete-hist" onclick="event.stopPropagation(); deleteHistory('${type}', ${item.id})">×</span>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
     });
-}
-
-function deleteHistory(type, id) {
-    historyData[type] = historyData[type].filter(item => item.id !== id);
-    localStorage.setItem('ai_pro_vault_v3', JSON.stringify(historyData));
-    renderHistory();
 }
 
 function loadHistory(type, id) {
     const item = historyData[type].find(i => i.id === id);
     if (!item) return;
-    if(type === 'summarize') {
-        document.getElementById('sumText').value = item.fullIn;
-        document.getElementById('sumResult').innerText = item.fullOut;
-        document.getElementById('sumResultWrap').style.display = 'block';
-    } else if(type === 'translate') {
-        document.getElementById('transText').value = item.fullIn;
-        document.getElementById('transResult').innerText = item.fullOut;
-        document.getElementById('transResultWrap').style.display = 'block';
-    } else if(type === 'image') {
-        document.getElementById('imgResult').innerText = item.fullOut;
-        document.getElementById('imgResultWrap').style.display = 'block';
+    switchPanel(type, document.querySelector(`.nav-item[onclick*="'${type}'"]`), true);
+    if(type === 'chat') {
+        document.getElementById('chatMessages').innerHTML = `<div class="message ai"><div class="bubble">${item.fullOut}</div></div>`;
+    } else {
+        const p = type === 'summarize' ? 'sum' : (type === 'translate' ? 'trans' : 'img');
+        if(document.getElementById(p + 'Text')) document.getElementById(p + 'Text').value = item.fullIn;
+        document.getElementById(p + 'Result').innerText = item.fullOut;
+        document.getElementById(p + 'ResultWrap').style.display = 'block';
     }
 }
 
@@ -369,51 +330,14 @@ function previewImage(event) {
     const reader = new FileReader();
     reader.onload = () => {
         const img = document.getElementById('imagePreview');
-        img.src = reader.result;
-        img.style.display = 'block';
+        img.src = reader.result; img.style.display = 'block';
         document.getElementById('uploadContent').style.display = 'none';
     };
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
-function loadHistory(type, id) {
-    const item = historyData[type].find(i => i.id === id);
-    if (!item) return;
 
-    // 1. Tự động chuyển sang Panel tương ứng nếu đang ở Panel khác
-    const navItem = document.querySelector(`.nav-item[onclick*="'${type}'"]`);
-    if (navItem) {
-        // Tắt hết active cũ
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        // Bật active cho panel lịch sử
-        document.getElementById('panel-' + type).classList.add('active');
-        navItem.classList.add('active');
-    }
-
-    // 2. Đổ dữ liệu lịch sử vào giao diện
-    if(type === 'summarize') {
-        document.getElementById('sumText').value = item.fullIn;
-        document.getElementById('sumResult').innerText = item.fullOut;
-        document.getElementById('sumResultWrap').style.display = 'block';
-    } else if(type === 'translate') {
-        document.getElementById('transText').value = item.fullIn;
-        document.getElementById('transResult').innerText = item.fullOut;
-        document.getElementById('transResultWrap').style.display = 'block';
-    } else if(type === 'image') {
-        document.getElementById('imgResult').innerText = item.fullOut;
-        document.getElementById('imgResultWrap').style.display = 'block';
-    } else if(type === 'chat') {
-        // ĐÂY LÀ PHẦN FIX CHO CHATBOT
-        const chatBox = document.getElementById('chatMessages');
-        chatBox.innerHTML = `
-            <div class="message user"><div class="bubble">${item.fullIn}</div></div>
-            <div class="message ai"><div class="bubble">${item.fullOut}</div></div>
-        `;
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-}
-
-window.onload = init;
+window.onload = renderHistory;
+</script>
 </script>
 </body>
 </html>
