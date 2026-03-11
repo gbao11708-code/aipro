@@ -4,653 +4,457 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Assistant Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #080b10;
-  --surface: #0e1218;
-  --surface2: #141a22;
-  --surface3: #1b2230;
-  --border: #1e2836;
-  --border2: #253040;
-  --accent: #00e5ff;
-  --accent-dim: rgba(0,229,255,0.08);
-  --accent-glow: rgba(0,229,255,0.15);
-  --green: #00ff88;
-  --purple: #a78bfa;
-  --orange: #fb923c;
-  --red: #ff4560;
-  --text: #e2e8f0;
-  --text2: #94a3b8;
-  --text3: #475569;
-  --mono: 'IBM Plex Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
+  /* Cool slate-dark — dễ nhìn, không chói */
+  --bg:        #111318;
+  --surface:   #181b21;
+  --surface2:  #1e222a;
+  --surface3:  #252a34;
+  --border:    #272c38;
+  --border2:   #303848;
+
+  /* Soft periwinkle-blue accent */
+  --accent:      #7b9fd4;
+  --accent-dim:  rgba(123,159,212,0.09);
+  --accent-glow: rgba(123,159,212,0.16);
+  --accent-soft: #9ab5e0;
+
+  /* Supporting tones */
+  --sage:  #5caf8a;
+  --rose:  #c97070;
+  --teal:  #4fa8a0;
+
+  /* Text — soft, not stark white */
+  --text:  #d4dae6;
+  --text2: #7a8899;
+  --text3: #404c5e;
+
+  --body: 'Outfit', sans-serif;
+  --mono: 'Fira Code', monospace;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--sans);
+  font-family: var(--body);
+  font-size: 15px;
   min-height: 100vh;
   overflow: hidden;
 }
 
-/* GRID BACKGROUND */
 body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
-}
-body::after {
-  content: '';
-  position: fixed;
-  top: -200px; left: -200px;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(0,229,255,0.04) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-  animation: orb 12s ease-in-out infinite alternate;
-}
-@keyframes orb {
-  0% { transform: translate(0,0); }
-  100% { transform: translate(400px, 300px); }
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 0%, rgba(123,159,212,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 70% at 85% 100%, rgba(79,168,160,0.04) 0%, transparent 55%);
+  pointer-events:none; z-index:0;
 }
 
-/* MODAL */
+/* ─── MODAL ─── */
 .modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.9);
-  z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(8px);
+  position:fixed; inset:0;
+  background:rgba(10,12,16,0.88);
+  z-index:1000;
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter:blur(12px);
 }
-.modal-overlay.hidden { display: none; }
+.modal-overlay.hidden { display:none; }
 .modal-box {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 20px;
-  padding: 44px;
-  width: 440px;
-  max-width: 90vw;
-  box-shadow: 0 0 80px rgba(0,229,255,0.08), 0 40px 80px rgba(0,0,0,0.7);
-  position: relative;
-  overflow: hidden;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  padding:44px;
+  width:400px; max-width:92vw;
+  box-shadow: 0 0 0 1px rgba(123,159,212,0.07), 0 40px 80px rgba(0,0,0,0.55);
+  position:relative;
 }
-.modal-box::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+.modal-box::after {
+  content:'';
+  position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:45%; height:1px;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent);
 }
-.modal-tag {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--accent);
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  margin-bottom: 16px;
-  display: flex; align-items: center; gap: 8px;
+.modal-eyebrow {
+  font-family:var(--mono); font-size:10px; letter-spacing:3px;
+  color:var(--accent); text-transform:uppercase;
+  margin-bottom:16px;
+  display:flex; align-items:center; gap:8px;
 }
-.modal-tag::before {
-  content: '';
-  width: 6px; height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: blink 1.4s ease infinite;
+.modal-eyebrow::before {
+  content:''; width:6px; height:6px; border-radius:50%;
+  background:var(--accent);
+  animation:softpulse 2.4s ease infinite;
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-.modal-box h2 {
-  font-size: 28px; font-weight: 700;
-  margin-bottom: 10px;
-  line-height: 1.2;
-}
-.modal-box h2 em { color: var(--accent); font-style: normal; }
-.modal-box p {
-  color: var(--text2);
-  font-size: 13px;
-  font-family: var(--mono);
-  margin-bottom: 28px;
-  line-height: 1.7;
-}
+@keyframes softpulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
 
-/* LAYOUT */
+.modal-box h2 { font-size:26px; font-weight:700; line-height:1.2; margin-bottom:10px; }
+.modal-box h2 em { color:var(--accent); font-style:normal; }
+.modal-box h2 sup {
+  font-size:11px; font-weight:600; color:var(--text3);
+  font-family:var(--mono); letter-spacing:1px;
+  vertical-align:super; margin-left:3px;
+}
+.modal-box p  { color:var(--text2); font-size:13.5px; line-height:1.7; margin-bottom:28px; }
+
+/* ─── LAYOUT ─── */
 .layout {
-  position: relative; z-index: 1;
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  height: 100vh;
+  position:relative; z-index:1;
+  display:grid; grid-template-columns:224px 1fr;
+  height:100vh;
 }
 
-/* SIDEBAR */
+/* ─── SIDEBAR ─── */
 .sidebar {
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column; overflow:hidden;
 }
 .sidebar-top {
-  padding: 24px 20px 16px;
-  border-bottom: 1px solid var(--border);
+  padding:20px 18px 16px;
+  border-bottom:1px solid var(--border);
 }
-.brand {
-  display: flex; align-items: center; gap: 10px;
+.brand { display:flex; align-items:center; gap:10px; }
+.brand-mark {
+  width:34px; height:34px;
+  background:linear-gradient(145deg, #5e82b8, #3d6096);
+  border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#d4dae6;
+  box-shadow:0 3px 12px rgba(62,96,150,0.35);
+  flex-shrink:0;
 }
-.brand-icon {
-  width: 34px; height: 34px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
+.brand-name { font-weight:700; font-size:14.5px; letter-spacing:-0.2px; line-height:1.2; }
+.brand-name em { color:var(--accent); font-style:normal; }
+.brand-name sup {
+  font-size:10px; font-weight:600; color:var(--text3);
+  font-family:var(--mono); letter-spacing:1px; vertical-align:super;
 }
-.brand-name {
-  font-weight: 700; font-size: 15px;
-  letter-spacing: -0.3px;
-}
-.brand-name span { color: var(--accent); }
 
-.sidebar-section { padding: 16px 12px 8px; flex: 1; overflow-y: auto; }
-.sidebar-label {
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--text3);
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  padding: 0 8px 8px;
+.sidebar-nav { flex:1; overflow-y:auto; padding:12px 10px; }
+.nav-section-label {
+  font-family:var(--mono); font-size:9px; letter-spacing:3px;
+  color:var(--text3); text-transform:uppercase;
+  padding:0 10px 10px;
 }
 .nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 12px;
-  border-radius: 9px;
-  cursor: pointer;
-  transition: all 0.18s;
-  border: 1px solid transparent;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text2);
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:9px;
+  cursor:pointer; transition:all 0.16s;
+  border:1px solid transparent;
+  font-size:13.5px; font-weight:500; color:var(--text2);
+  user-select:none;
 }
-.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item:hover { background:var(--surface2); color:var(--text); }
 .nav-item.active {
-  background: var(--accent-dim);
-  border-color: rgba(0,229,255,0.2);
-  color: var(--accent);
+  background:var(--accent-dim);
+  border-color:rgba(123,159,212,0.2);
+  color:var(--accent);
 }
 .nav-icon {
-  width: 28px; height: 28px;
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-  background: var(--surface2);
+  width:28px; height:28px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0;
+  background:var(--surface2); transition:background 0.16s;
 }
-.nav-item.active .nav-icon { background: rgba(0,229,255,0.12); }
+.nav-item.active .nav-icon { background:rgba(123,159,212,0.12); }
 
 .history-list {
-  margin: 2px 0 4px 50px;
-  display: flex; flex-direction: column; gap: 1px;
+  margin:2px 0 5px 50px;
+  display:flex; flex-direction:column; gap:1px;
 }
 .history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text3);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: all 0.15s;
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:11.5px; color:var(--text3);
+  padding:4px 8px; border-radius:5px;
+  cursor:pointer; transition:all 0.14s;
+  white-space:nowrap; overflow:hidden;
 }
-.history-item:hover { color: var(--accent); background: var(--accent-dim); }
+.history-item span:first-child { overflow:hidden; text-overflow:ellipsis; }
+.history-item:hover { color:var(--accent); background:var(--accent-dim); }
 .delete-hist {
-  opacity: 0;
-  color: var(--red);
-  padding: 0 4px;
-  transition: all 0.15s;
-  font-size: 14px;
-  flex-shrink: 0;
+  opacity:0; color:var(--rose); padding:0 3px;
+  font-size:14px; flex-shrink:0; transition:opacity 0.14s;
 }
-.history-item:hover .delete-hist { opacity: 1; }
+.history-item:hover .delete-hist { opacity:1; }
 
-.sidebar-bottom {
-  padding: 16px;
-  border-top: 1px solid var(--border);
+.sidebar-footer {
+  padding:13px 14px; border-top:1px solid var(--border);
 }
-.status-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  display: flex; align-items: center; gap: 10px;
+.status-pill {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:11px; padding:10px 13px;
+  display:flex; align-items:center; gap:10px;
 }
-.status-dot {
-  width: 7px; height: 7px;
-  background: var(--green);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--green);
-  animation: blink 2s ease infinite;
-  flex-shrink: 0;
+.online-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--sage); box-shadow:0 0 7px var(--sage);
+  flex-shrink:0; animation:softpulse 2.8s ease infinite;
 }
-.status-text { font-size: 11px; }
-.status-text strong { display: block; color: var(--text); font-size: 12px; font-weight: 600; }
-.status-text span { color: var(--text3); font-family: var(--mono); font-size: 10px; }
+.status-info strong { display:block; font-size:12px; font-weight:600; color:var(--text); }
+.status-info span   { font-family:var(--mono); font-size:10px; color:var(--text3); }
 
-/* MAIN */
-.main { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+/* ─── MAIN ─── */
+.main { display:flex; flex-direction:column; overflow:hidden; }
 
-/* TOP BAR */
 .topbar {
-  height: 56px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  background: var(--surface);
-  flex-shrink: 0;
+  height:52px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px; flex-shrink:0;
 }
-.topbar-left {
-  display: flex; align-items: center; gap: 10px;
+.topbar-left { display:flex; align-items:center; gap:9px; }
+.page-title  { font-weight:600; font-size:14.5px; }
+.page-tag {
+  font-family:var(--mono); font-size:9.5px;
+  background:var(--accent-dim); color:var(--accent);
+  border:1px solid rgba(123,159,212,0.18);
+  padding:3px 8px; border-radius:5px; letter-spacing:1px;
 }
-.panel-title { font-weight: 700; font-size: 15px; }
-.panel-badge {
-  font-family: var(--mono);
-  font-size: 10px;
-  background: var(--accent-dim);
-  color: var(--accent);
-  border: 1px solid rgba(0,229,255,0.2);
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 1px;
-}
-.model-badge {
-  font-family: var(--mono);
-  font-size: 10px;
-  background: rgba(167,139,250,0.1);
-  color: var(--purple);
-  border: 1px solid rgba(167,139,250,0.2);
-  padding: 4px 10px;
-  border-radius: 5px;
-  letter-spacing: 0.5px;
+.model-tag {
+  font-family:var(--mono); font-size:9.5px;
+  background:rgba(92,175,138,0.08); color:var(--sage);
+  border:1px solid rgba(92,175,138,0.18);
+  padding:3px 9px; border-radius:5px; letter-spacing:0.5px;
 }
 
-/* PANELS */
-.panel { display: none; flex-direction: column; height: calc(100vh - 56px); animation: fadeUp 0.25s ease; }
-.panel.active { display: flex; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-.panel-body { flex: 1; padding: 24px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+/* ─── PANELS ─── */
+.panel { display:none; flex-direction:column; height:calc(100vh - 52px); animation:slideUp 0.2s ease; }
+.panel.active { display:flex; }
+@keyframes slideUp { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
 
-/* FORM ELEMENTS */
+.panel-body {
+  flex:1; overflow-y:auto; padding:22px 24px;
+  display:flex; flex-direction:column; gap:14px;
+}
+
+/* FORMS */
 textarea, input[type="text"] {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 14px 16px;
-  border-radius: 10px;
-  font-family: var(--sans);
-  font-size: 14px;
-  resize: vertical;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  outline: none;
-  line-height: 1.6;
+  width:100%;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  color:var(--text); padding:12px 14px;
+  border-radius:9px; font-family:var(--body); font-size:14px;
+  resize:vertical; outline:none; line-height:1.65;
+  transition:border-color 0.18s, box-shadow 0.18s;
 }
 textarea:focus, input:focus {
-  border-color: rgba(0,229,255,0.4);
-  box-shadow: 0 0 0 3px rgba(0,229,255,0.06);
+  border-color:rgba(123,159,212,0.4);
+  box-shadow:0 0 0 3px rgba(123,159,212,0.07);
 }
+::placeholder { color:var(--text3); }
+
 select {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px 14px;
-  border-radius: 9px;
-  font-family: var(--sans);
-  font-size: 13px;
-  cursor: pointer;
-  outline: none;
+  background:var(--surface2); border:1px solid var(--border2);
+  color:var(--text); padding:9px 13px;
+  border-radius:8px; font-family:var(--body); font-size:13px;
+  cursor:pointer; outline:none; transition:border-color 0.18s;
 }
-select:focus { border-color: rgba(0,229,255,0.4); }
+select:focus { border-color:rgba(123,159,212,0.38); }
 
 .btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 22px;
-  border-radius: 9px; border: none;
-  cursor: pointer;
-  font-family: var(--sans);
-  font-weight: 600;
-  font-size: 13px;
-  transition: all 0.18s;
+  display:inline-flex; align-items:center; gap:7px;
+  padding:9px 20px; border-radius:8px; border:none;
+  cursor:pointer; font-family:var(--body); font-weight:600; font-size:13.5px;
+  transition:all 0.16s; white-space:nowrap;
 }
 .btn-primary {
-  background: var(--accent);
-  color: #000;
-  box-shadow: 0 4px 20px rgba(0,229,255,0.2);
+  background:#4a72a8;
+  color:#e8eef8;
+  box-shadow:0 3px 14px rgba(74,114,168,0.28);
 }
 .btn-primary:hover {
-  background: #33eaff;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(0,229,255,0.3);
+  background:#5580b8;
+  transform:translateY(-1px);
+  box-shadow:0 5px 20px rgba(74,114,168,0.36);
 }
 .btn-ghost {
-  background: var(--surface2);
-  color: var(--text2);
-  border: 1px solid var(--border);
+  background:var(--surface2); color:var(--text2);
+  border:1px solid var(--border2);
 }
-.btn-ghost:hover { background: var(--surface3); color: var(--text); }
+.btn-ghost:hover { background:var(--surface3); color:var(--text); }
 
-.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+
+.field-label {
+  font-family:var(--mono); font-size:9.5px;
+  color:var(--text3); letter-spacing:2px; text-transform:uppercase;
+  margin-bottom:5px;
+}
 
 .result-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  min-height: 100px;
-  font-size: 14px;
-  line-height: 1.75;
-  white-space: pre-wrap;
-  position: relative;
-  color: var(--text);
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:10px; padding:18px;
+  min-height:90px; font-size:14px; line-height:1.75;
+  white-space:pre-wrap; color:var(--text); position:relative;
 }
-.result-box::before {
-  content: 'OUTPUT';
-  position: absolute;
-  top: 0; left: 16px;
-  background: var(--surface);
-  padding: 0 8px;
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--text3);
-  letter-spacing: 2px;
-  transform: translateY(-50%);
-}
-.result-box.loading { border-color: rgba(0,229,255,0.3); }
+.result-box.loading { border-color:rgba(123,159,212,0.28); }
 .result-box.loading::after {
-  content: '';
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), var(--purple), var(--accent), transparent);
-  background-size: 300% 100%;
-  animation: shimmer 1.8s linear infinite;
-  border-radius: 0 0 12px 12px;
+  content:'';
+  position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--accent), var(--teal), var(--accent), transparent);
+  background-size:300% 100%;
+  animation:shimmer 1.8s linear infinite;
+  border-radius:0 0 10px 10px;
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-.section-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-/* ── TRANSLATE 2-PANE ── */
-.translate-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  min-height: 0;
-  padding: 20px 28px 0;
-}
+/* ─── TRANSLATE ─── */
+.translate-wrap { flex:1; display:flex; flex-direction:column; padding:18px 24px 0; min-height:0; }
 .translate-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--border);
-  border-radius: 14px 14px 0 0;
-  overflow: hidden;
-  background: var(--surface);
-  flex: 1;
-  min-height: 0;
+  display:grid; grid-template-columns:1fr 1fr;
+  border:1px solid var(--border2);
+  border-radius:12px 12px 0 0;
+  overflow:hidden; flex:1; min-height:0;
+  background:var(--surface);
 }
-.translate-pane {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+.trans-pane { display:flex; flex-direction:column; min-height:0; }
+.trans-pane + .trans-pane { border-left:1px solid var(--border2); }
+.trans-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 15px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2); flex-shrink:0;
 }
-.translate-pane + .translate-pane { border-left: 1px solid var(--border); }
-.translate-pane-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface2);
-  flex-shrink: 0;
+.trans-lang-label {
+  display:flex; align-items:center; gap:7px;
+  font-family:var(--mono); font-size:10.5px; color:var(--text2); letter-spacing:0.5px;
 }
-.lang-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text2);
-  letter-spacing: 1px;
-  display: flex; align-items: center; gap: 6px;
+.lang-pip { width:6px; height:6px; border-radius:50%; }
+.trans-pane textarea {
+  flex:1; border:none; border-radius:0; resize:none;
+  background:transparent; padding:15px 17px; min-height:0;
 }
-.lang-dot { width: 6px; height: 6px; border-radius: 50%; }
-.translate-pane textarea {
-  flex: 1;
-  border: none;
-  border-radius: 0;
-  resize: none;
-  background: transparent;
-  padding: 18px;
-  min-height: 0;
+.trans-pane textarea:focus { box-shadow:none; border:none; }
+.trans-footer {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 15px; border-top:1px solid var(--border);
+  background:var(--surface); flex-shrink:0;
 }
-.translate-pane textarea:focus { box-shadow: none; border: none; }
-.translate-pane-footer {
-  padding: 10px 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  background: var(--surface);
+.trans-charcount { font-family:var(--mono); font-size:10px; color:var(--text3); }
+.trans-output {
+  flex:1; padding:15px 17px;
+  font-size:14px; line-height:1.75;
+  color:var(--text3); white-space:pre-wrap; overflow-y:auto;
 }
-.char-count { font-family: var(--mono); font-size: 10px; color: var(--text3); }
-.translate-output {
-  flex: 1;
-  padding: 18px;
-  font-size: 14px;
-  line-height: 1.75;
-  color: var(--text3);
-  white-space: pre-wrap;
-  overflow-y: auto;
-}
-.translate-output.has-content { color: var(--text); }
+.trans-output.ready { color:var(--text); }
 .translate-toolbar {
-  padding: 14px 20px;
-  border: 1px solid var(--border);
-  border-top: none;
-  border-radius: 0 0 14px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--surface2);
-  margin-bottom: 20px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 17px;
+  border:1px solid var(--border2); border-top:none;
+  border-radius:0 0 12px 12px;
+  background:var(--surface2); margin-bottom:18px;
 }
-.translate-actions { display: flex; gap: 8px; align-items: center; }
+.kbd {
+  display:inline-block;
+  background:var(--surface3); border:1px solid var(--border2);
+  padding:2px 6px; border-radius:4px;
+  font-family:var(--mono); font-size:9.5px; color:var(--text2);
+}
 
-/* TYPING DOTS */
-.typing-dots { display: inline-flex; gap: 4px; align-items: center; }
-.typing-dots span {
-  width: 6px; height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: typingPulse 1.2s ease infinite;
+/* TYPING */
+.dots { display:inline-flex; gap:4px; align-items:center; }
+.dots span {
+  width:5px; height:5px; border-radius:50%;
+  background:var(--accent);
+  animation:dotB 1.2s ease infinite;
 }
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes typingPulse { 0%,80%,100%{transform:scale(0.7);opacity:0.5} 40%{transform:scale(1);opacity:1} }
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotB { 0%,80%,100%{transform:scale(0.6);opacity:0.35} 40%{transform:scale(1);opacity:1} }
 
-/* IMAGE UPLOAD */
-.upload-area {
-  border: 1px dashed var(--border2);
-  border-radius: 12px;
-  padding: 48px 32px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--surface);
+/* IMAGE */
+.upload-zone {
+  border:1.5px dashed var(--border2); border-radius:12px;
+  padding:48px 32px; text-align:center; cursor:pointer;
+  transition:all 0.18s; background:var(--surface2);
 }
-.upload-area:hover {
-  border-color: rgba(0,229,255,0.4);
-  background: var(--accent-dim);
-}
-.upload-icon { font-size: 32px; margin-bottom: 12px; }
-.upload-text { font-size: 13px; color: var(--text2); }
-.upload-sub { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: var(--mono); }
-#imagePreview { max-width: 100%; max-height: 220px; border-radius: 10px; display: none; margin: 12px auto; object-fit: contain; }
+.upload-zone:hover { border-color:rgba(123,159,212,0.38); background:var(--accent-dim); }
+.upload-emoji { font-size:32px; margin-bottom:11px; }
+.upload-primary { font-size:14px; font-weight:500; color:var(--text2); }
+.upload-secondary { font-family:var(--mono); font-size:10.5px; color:var(--text3); margin-top:5px; }
+#imagePreview { max-width:100%; max-height:210px; border-radius:9px; display:none; margin:12px auto; object-fit:contain; }
 
-/* ── CHAT ── */
+/* ─── CHAT ─── */
 .chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  flex:1; overflow-y:auto; padding:20px 24px;
+  display:flex; flex-direction:column; gap:18px;
 }
-.chat-messages::-webkit-scrollbar { width: 4px; }
-.chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-.message { display: flex; gap: 12px; max-width: 800px; }
-.message.user { flex-direction: row-reverse; margin-left: auto; }
-
-.msg-avatar {
-  width: 32px; height: 32px;
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-  align-self: flex-end;
-}
-.message.ai .msg-avatar {
-  background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(167,139,250,0.2));
-  border: 1px solid rgba(0,229,255,0.2);
-}
-.message.user .msg-avatar {
-  background: rgba(251,146,60,0.15);
-  border: 1px solid rgba(251,146,60,0.2);
-}
-.msg-content { display: flex; flex-direction: column; gap: 4px; max-width: calc(100% - 44px); }
-.msg-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); padding: 0 4px; }
-.message.user .msg-meta { text-align: right; }
-.bubble {
-  padding: 14px 18px;
-  border-radius: 14px;
-  font-size: 14px;
-  line-height: 1.7;
-  white-space: pre-wrap;
-}
-.message.ai .bubble {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-bottom-left-radius: 4px;
-}
-.message.user .bubble {
-  background: rgba(0,229,255,0.08);
-  border: 1px solid rgba(0,229,255,0.15);
-  border-bottom-right-radius: 4px;
-}
+.chat-messages::-webkit-scrollbar { width:4px; }
+.chat-messages::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
 
 .chat-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: var(--text3);
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:12px;
 }
-.chat-empty-icon { font-size: 40px; opacity: 0.4; }
-.chat-empty h3 { font-size: 16px; font-weight: 600; color: var(--text2); }
-.chat-empty p { font-size: 13px; font-family: var(--mono); text-align: center; }
-.chat-suggestions {
-  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-  margin-top: 8px;
+.chat-empty-glyph {
+  width:56px; height:56px; border-radius:14px;
+  background:var(--accent-dim); border:1px solid rgba(123,159,212,0.18);
+  display:flex; align-items:center; justify-content:center; font-size:26px;
 }
-.suggestion-chip {
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--text2);
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
+.chat-empty h3 { font-size:16px; font-weight:600; color:var(--text2); }
+.chat-empty p  { font-size:12.5px; color:var(--text3); font-family:var(--mono); }
+.chips { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
+.chip {
+  background:var(--surface2); border:1px solid var(--border2);
+  color:var(--text2); padding:7px 14px; border-radius:18px;
+  font-size:12.5px; cursor:pointer; transition:all 0.15s;
 }
-.suggestion-chip:hover {
-  border-color: rgba(0,229,255,0.3);
-  color: var(--accent);
-  background: var(--accent-dim);
+.chip:hover { border-color:rgba(123,159,212,0.32); color:var(--accent); background:var(--accent-dim); }
+
+.message { display:flex; gap:10px; max-width:800px; }
+.message.user { flex-direction:row-reverse; margin-left:auto; }
+.av {
+  width:32px; height:32px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0; align-self:flex-end;
 }
+.message.ai   .av { background:var(--accent-dim); border:1px solid rgba(123,159,212,0.2); }
+.message.user .av { background:rgba(92,175,138,0.1); border:1px solid rgba(92,175,138,0.18); }
+.msg-wrap { display:flex; flex-direction:column; gap:3px; max-width:calc(100% - 42px); }
+.msg-meta { font-family:var(--mono); font-size:9.5px; color:var(--text3); padding:0 4px; }
+.message.user .msg-meta { text-align:right; }
+.bubble { padding:12px 16px; border-radius:13px; font-size:14px; line-height:1.7; white-space:pre-wrap; }
+.message.ai   .bubble { background:var(--surface2); border:1px solid var(--border2); border-bottom-left-radius:4px; }
+.message.user .bubble { background:rgba(123,159,212,0.08); border:1px solid rgba(123,159,212,0.16); border-bottom-right-radius:4px; }
 
 .chat-footer {
-  padding: 16px 28px 20px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-  flex-shrink: 0;
+  padding:13px 24px 16px; border-top:1px solid var(--border);
+  background:var(--surface); flex-shrink:0;
 }
-.chat-input-wrap {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 14px;
-  padding: 10px 10px 10px 16px;
-  transition: border-color 0.2s;
+.chat-input-row {
+  display:flex; gap:9px; align-items:flex-end;
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:12px; padding:8px 8px 8px 14px;
+  transition:border-color 0.18s, box-shadow 0.18s;
 }
-.chat-input-wrap:focus-within {
-  border-color: rgba(0,229,255,0.35);
-  box-shadow: 0 0 0 3px rgba(0,229,255,0.05);
+.chat-input-row:focus-within {
+  border-color:rgba(123,159,212,0.36);
+  box-shadow:0 0 0 3px rgba(123,159,212,0.06);
 }
-.chat-input-wrap textarea {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 4px 0;
-  resize: none;
-  min-height: 24px;
-  max-height: 120px;
-  font-size: 14px;
-  line-height: 1.5;
+.chat-input-row textarea {
+  flex:1; background:transparent; border:none;
+  padding:3px 0; resize:none; min-height:22px; max-height:120px;
+  font-size:14px; line-height:1.5;
 }
-.chat-input-wrap textarea:focus { box-shadow: none; }
-.chat-send-btn {
-  width: 38px; height: 38px;
-  background: var(--accent);
-  border: none; border-radius: 9px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.18s;
-  font-size: 16px;
-  color: #000;
+.chat-input-row textarea:focus { box-shadow:none; }
+.send-btn {
+  width:36px; height:36px;
+  background:#4a72a8; border:none; border-radius:8px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:15px; color:#d4dae6; flex-shrink:0;
+  transition:all 0.16s; box-shadow:0 2px 10px rgba(74,114,168,0.25);
 }
-.chat-send-btn:hover { background: #33eaff; transform: scale(1.05); }
-.chat-hint {
-  margin-top: 8px;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text3);
-  text-align: center;
-}
+.send-btn:hover { background:#5580b8; transform:scale(1.06); }
+.chat-hint { margin-top:6px; text-align:center; font-family:var(--mono); font-size:9.5px; color:var(--text3); }
 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
 </style>
 </head>
 <body>
@@ -658,11 +462,11 @@ select:focus { border-color: rgba(0,229,255,0.4); }
 <!-- MODAL -->
 <div class="modal-overlay" id="apiModal">
   <div class="modal-box">
-    <div class="modal-tag">System Ready</div>
-    <h2>AI <em>Assistant</em> <em> Pro </em> </em><br>Pro</h2>
+    <div class="modal-eyebrow">System Ready</div>
+    <h2>AI <em>Assistant</em> Pro</h2>
     <p>Kết nối Groq API qua Vercel serverless.<br>Sẵn sàng xử lý văn bản, ảnh và hội thoại.</p>
-    <button class="btn btn-primary" onclick="init()" style="width:100%;justify-content:center;padding:13px">
-      ⚡ Khởi động hệ thống
+    <button class="btn btn-primary" onclick="init()" style="width:100%;justify-content:center;padding:13px;font-size:14px;">
+      ✦ &nbsp;Khởi động hệ thống
     </button>
   </div>
 </div>
@@ -673,35 +477,35 @@ select:focus { border-color: rgba(0,229,255,0.4); }
   <nav class="sidebar">
     <div class="sidebar-top">
       <div class="brand">
-        <div class="brand-icon">✦</div>
-        <div class="brand-name">AI <span>Assistant</span></div>
+        <div class="brand-mark">✦</div>
+        <div class="brand-name">AI <em>Assistant</em> <sup>PRO</sup></div>
       </div>
     </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Công cụ</div>
-      <div class="nav-item active" onclick="switchPanel('summarize', this)">
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Công cụ</div>
+      <div class="nav-item active" onclick="switchPanel('summarize',this)">
         <div class="nav-icon">📝</div>Tóm tắt
       </div>
       <div id="hist-summarize" class="history-list"></div>
-      <div class="nav-item" onclick="switchPanel('image', this)">
+      <div class="nav-item" onclick="switchPanel('image',this)">
         <div class="nav-icon">🖼️</div>Nhận diện ảnh
       </div>
       <div id="hist-image" class="history-list"></div>
-      <div class="nav-item" onclick="switchPanel('translate', this)">
+      <div class="nav-item" onclick="switchPanel('translate',this)">
         <div class="nav-icon">🌐</div>Dịch thuật
       </div>
       <div id="hist-translate" class="history-list"></div>
-      <div class="nav-item" onclick="switchPanel('chat', this)">
+      <div class="nav-item" onclick="switchPanel('chat',this)">
         <div class="nav-icon">💬</div>Chat AI
       </div>
       <div id="hist-chat" class="history-list"></div>
     </div>
-    <div class="sidebar-bottom">
-      <div class="status-card">
-        <div class="status-dot"></div>
-        <div class="status-text">
+    <div class="sidebar-footer">
+      <div class="status-pill">
+        <div class="online-dot"></div>
+        <div class="status-info">
           <strong>Groq · Online</strong>
-          <span>llama-3.3-70b</span>
+          <span>llama-3.3-70b-versatile</span>
         </div>
       </div>
     </div>
@@ -711,30 +515,30 @@ select:focus { border-color: rgba(0,229,255,0.4); }
   <div class="main">
     <div class="topbar">
       <div class="topbar-left">
-        <span class="panel-title" id="topbarTitle">Tóm tắt văn bản</span>
-        <span class="panel-badge" id="topbarBadge">SUMMARIZE</span>
+        <span class="page-title" id="topbarTitle">Tóm tắt văn bản</span>
+        <span class="page-tag"   id="topbarTag">SUMMARIZE</span>
       </div>
-      <div><span class="model-badge">GROQ LLM</span></div>
+      <span class="model-tag">GROQ LLM</span>
     </div>
 
     <!-- SUMMARIZE -->
     <div class="panel active" id="panel-summarize">
       <div class="panel-body">
         <div>
-          <div class="section-label">Văn bản đầu vào</div>
-          <textarea id="sumText" placeholder="Dán văn bản dài vào đây để AI tóm tắt..." rows="8"></textarea>
+          <div class="field-label">Văn bản đầu vào</div>
+          <textarea id="sumText" placeholder="Dán văn bản dài vào đây để AI tóm tắt…" rows="8"></textarea>
         </div>
         <div class="row">
           <select id="sumLength">
-            <option value="ngắn gọn trong 3-5 câu">📋 Tóm tắt ngắn</option>
+            <option value="ngắn gọn trong 3–5 câu">📋 Tóm tắt ngắn</option>
             <option value="chi tiết và có cấu trúc rõ ràng" selected>📄 Tóm tắt chi tiết</option>
-            <option value="dạng gạch đầu dòng bullet points">• Dạng bullet points</option>
+            <option value="dạng gạch đầu dòng bullet points">• Bullet points</option>
           </select>
           <button class="btn btn-primary" onclick="runSummarize()">✦ Tóm tắt ngay</button>
-          <button class="btn btn-ghost" onclick="resetPanel('summarize')">↺ Làm mới</button>
+          <button class="btn btn-ghost"   onclick="resetPanel('summarize')">↺ Làm mới</button>
         </div>
         <div id="sumResultWrap" style="display:none">
-          <div class="section-label">Kết quả</div>
+          <div class="field-label">Kết quả</div>
           <div class="result-box" id="sumResult"></div>
         </div>
       </div>
@@ -744,23 +548,23 @@ select:focus { border-color: rgba(0,229,255,0.4); }
     <div class="panel" id="panel-image">
       <div class="panel-body">
         <div>
-          <div class="section-label">Tải lên hình ảnh</div>
-          <div class="upload-area" onclick="document.getElementById('imageFile').click()">
-            <input type="file" id="imageFile" accept="image/*" onchange="previewImage(event)" style="display:none">
-            <div id="uploadContent">
-              <div class="upload-icon">📷</div>
-              <div class="upload-text">Click hoặc kéo thả ảnh vào đây</div>
-              <div class="upload-sub">PNG · JPG · WEBP · Tối đa 10MB</div>
+          <div class="field-label">Tải lên hình ảnh</div>
+          <div class="upload-zone" onclick="document.getElementById('imgFile').click()">
+            <input type="file" id="imgFile" accept="image/*" onchange="previewImg(event)" style="display:none">
+            <div id="uploadHint">
+              <div class="upload-emoji">📷</div>
+              <div class="upload-primary">Click hoặc kéo thả ảnh vào đây</div>
+              <div class="upload-secondary">PNG · JPG · WEBP · Tối đa 10 MB</div>
             </div>
             <img id="imagePreview">
           </div>
         </div>
         <div class="row">
           <button class="btn btn-primary" onclick="runImageAnalysis()">✦ Phân tích ảnh</button>
-          <button class="btn btn-ghost" onclick="resetPanel('image')">↺ Làm mới</button>
+          <button class="btn btn-ghost"   onclick="resetPanel('image')">↺ Làm mới</button>
         </div>
         <div id="imgResultWrap" style="display:none">
-          <div class="section-label">Kết quả phân tích</div>
+          <div class="field-label">Kết quả phân tích</div>
           <div class="result-box" id="imgResult"></div>
         </div>
       </div>
@@ -770,28 +574,24 @@ select:focus { border-color: rgba(0,229,255,0.4); }
     <div class="panel" id="panel-translate" style="overflow:hidden;">
       <div class="translate-wrap">
         <div class="translate-container">
-          <!-- LEFT -->
-          <div class="translate-pane">
-            <div class="translate-pane-header">
-              <div class="lang-label">
-                <span class="lang-dot" style="background:var(--orange)"></span>
-                Văn bản nguồn
+          <div class="trans-pane">
+            <div class="trans-header">
+              <div class="trans-lang-label">
+                <span class="lang-pip" style="background:#7a9abf"></span>Văn bản nguồn
               </div>
             </div>
-            <textarea id="transText" placeholder="Nhập văn bản cần dịch..." oninput="updateCharCount()"></textarea>
-            <div class="translate-pane-footer">
-              <div class="char-count" id="charCount">0 ký tự</div>
-              <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="clearInput()">Xóa</button>
+            <textarea id="transText" placeholder="Nhập văn bản cần dịch…" oninput="updateCount()"></textarea>
+            <div class="trans-footer">
+              <span class="trans-charcount" id="srcCount">0 ký tự</span>
+              <button class="btn btn-ghost" style="padding:4px 12px;font-size:12px;" onclick="clearSrc()">Xóa</button>
             </div>
           </div>
-          <!-- RIGHT -->
-          <div class="translate-pane">
-            <div class="translate-pane-header">
-              <div class="lang-label">
-                <span class="lang-dot" style="background:var(--accent)"></span>
-                Ngôn ngữ dịch
+          <div class="trans-pane">
+            <div class="trans-header">
+              <div class="trans-lang-label">
+                <span class="lang-pip" style="background:var(--sage)"></span>Ngôn ngữ dịch
               </div>
-              <select id="targetLang" style="background:var(--surface3);border:1px solid var(--border);font-size:12px;color:var(--text);border-radius:6px;padding:4px 10px;font-family:var(--mono);">
+              <select id="targetLang" style="background:var(--surface3);border:1px solid var(--border2);font-size:11.5px;color:var(--text);border-radius:6px;padding:3px 9px;font-family:var(--mono);">
                 <option value="Tiếng Anh">🇺🇸 Tiếng Anh</option>
                 <option value="Tiếng Việt" selected>🇻🇳 Tiếng Việt</option>
                 <option value="Tiếng Nhật">🇯🇵 Tiếng Nhật</option>
@@ -799,35 +599,32 @@ select:focus { border-color: rgba(0,229,255,0.4); }
                 <option value="Tiếng Trung giản thể">🇨🇳 Tiếng Trung</option>
                 <option value="Tiếng Pháp">🇫🇷 Tiếng Pháp</option>
                 <option value="Tiếng Đức">🇩🇪 Tiếng Đức</option>
-                <option value="Tiếng Tây Ban Nha">🇪🇸 Tiếng Tây Ban Nha</option>
-                <option value="Tiếng Bồ Đào Nha">🇧🇷 Tiếng Bồ Đào Nha</option>
+                <option value="Tiếng Tây Ban Nha">🇪🇸 Tiếng TBN</option>
+                <option value="Tiếng Bồ Đào Nha">🇧🇷 Tiếng BĐN</option>
                 <option value="Tiếng Ý">🇮🇹 Tiếng Ý</option>
                 <option value="Tiếng Nga">🇷🇺 Tiếng Nga</option>
                 <option value="Tiếng Ả Rập">🇸🇦 Tiếng Ả Rập</option>
                 <option value="Tiếng Thái">🇹🇭 Tiếng Thái</option>
-                <option value="Tiếng Indonesia">🇮🇩 Tiếng Indonesia</option>
+                <option value="Tiếng Indonesia">🇮🇩 Indonesia</option>
                 <option value="Tiếng Hindi">🇮🇳 Tiếng Hindi</option>
                 <option value="Tiếng Hà Lan">🇳🇱 Tiếng Hà Lan</option>
               </select>
             </div>
-            <div id="transOutput" class="translate-output">Bản dịch sẽ hiện ở đây...</div>
-            <div class="translate-pane-footer">
-              <div class="char-count" id="outputCharCount">–</div>
-              <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="copyTranslation()" id="copyBtn" disabled>📋 Sao chép</button>
+            <div class="trans-output" id="transOut">Bản dịch sẽ hiện ở đây…</div>
+            <div class="trans-footer">
+              <span class="trans-charcount" id="dstCount">–</span>
+              <button class="btn btn-ghost" style="padding:4px 12px;font-size:12px;" onclick="copyOut()" id="copyBtn" disabled>📋 Sao chép</button>
             </div>
           </div>
         </div>
         <div class="translate-toolbar">
-          <div class="translate-actions">
+          <div class="row" style="gap:8px;">
             <button class="btn btn-primary" onclick="runTranslate()">🌐 Dịch ngay</button>
-            <button class="btn btn-ghost" onclick="swapLanguages()">⇄ Hoán đổi</button>
+            <button class="btn btn-ghost"   onclick="swapLangs()">⇄ Hoán đổi</button>
           </div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);">
-            <kbd style="background:var(--surface3);border:1px solid var(--border);padding:2px 6px;border-radius:4px;font-size:10px;">Ctrl</kbd>
-            +
-            <kbd style="background:var(--surface3);border:1px solid var(--border);padding:2px 6px;border-radius:4px;font-size:10px;">Enter</kbd>
-            để dịch nhanh
-          </div>
+          <span style="font-family:var(--mono);font-size:9.5px;color:var(--text3);">
+            <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> để dịch nhanh
+          </span>
         </div>
       </div>
     </div>
@@ -836,25 +633,25 @@ select:focus { border-color: rgba(0,229,255,0.4); }
     <div class="panel" id="panel-chat">
       <div class="chat-messages" id="chatMessages">
         <div class="chat-empty" id="chatEmpty">
-          <div class="chat-empty-icon">✦</div>
-          <h3>Chat với AI Assistant</h3>
-          <p>Đặt câu hỏi hoặc thảo luận bất kỳ chủ đề nào.</p>
-          <div class="chat-suggestions">
-            <div class="suggestion-chip" onclick="useSuggestion('Giải thích AI là gì cho người mới bắt đầu?')">AI là gì?</div>
-            <div class="suggestion-chip" onclick="useSuggestion('Viết cho tôi một email chuyên nghiệp xin việc')">Viết email xin việc</div>
-            <div class="suggestion-chip" onclick="useSuggestion('Xu hướng công nghệ nổi bật năm 2025')">Xu hướng 2025</div>
-            <div class="suggestion-chip" onclick="useSuggestion('Giúp tôi bắt đầu học lập trình Python từ đầu')">Học Python</div>
+          <div class="chat-empty-glyph">💬</div>
+          <h3>Chat với AI Assistant Pro</h3>
+          <p>Đặt câu hỏi hoặc thảo luận bất kỳ chủ đề nào</p>
+          <div class="chips">
+            <div class="chip" onclick="useSuggest('AI là gì? Giải thích đơn giản cho người mới')">AI là gì?</div>
+            <div class="chip" onclick="useSuggest('Viết email xin việc chuyên nghiệp cho tôi')">Viết email xin việc</div>
+            <div class="chip" onclick="useSuggest('Xu hướng công nghệ nổi bật năm 2025')">Xu hướng 2025</div>
+            <div class="chip" onclick="useSuggest('Hướng dẫn học Python từ đầu cho người mới')">Học Python</div>
           </div>
         </div>
       </div>
       <div class="chat-footer">
-        <div class="chat-input-wrap">
-          <textarea id="chatInput" placeholder="Nhập tin nhắn..." rows="1"
+        <div class="chat-input-row">
+          <textarea id="chatInput" placeholder="Nhập tin nhắn…" rows="1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"
-            oninput="autoResize(this)"></textarea>
-          <button class="chat-send-btn" onclick="sendChat()">➤</button>
+            oninput="autoH(this)"></textarea>
+          <button class="send-btn" onclick="sendChat()">➤</button>
         </div>
-        <div class="chat-hint">Enter để gửi &nbsp;·&nbsp; Shift+Enter xuống dòng</div>
+        <div class="chat-hint">Enter gửi &nbsp;·&nbsp; Shift+Enter xuống dòng</div>
       </div>
     </div>
 
@@ -862,10 +659,10 @@ select:focus { border-color: rgba(0,229,255,0.4); }
 </div>
 
 <script>
-let historyData = JSON.parse(localStorage.getItem('ai_pro_v4')) || { summarize:[], image:[], translate:[], chat:[] };
-let currentTranslation = '';
+let hist = JSON.parse(localStorage.getItem('aipro_v6')) || {summarize:[],image:[],translate:[],chat:[]};
+let curTrans = '';
 
-const topbarMeta = {
+const META = {
   summarize: ['Tóm tắt văn bản','SUMMARIZE'],
   image:     ['Nhận diện hình ảnh','IMAGE ANALYSIS'],
   translate: ['Dịch thuật AI','TRANSLATE'],
@@ -874,311 +671,261 @@ const topbarMeta = {
 
 function init() {
   document.getElementById('apiModal').classList.add('hidden');
-  renderHistory();
+  renderHist();
 }
 
 function switchPanel(name, el) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
   el.classList.add('active');
-  const [title, badge] = topbarMeta[name];
-  document.getElementById('topbarTitle').textContent = title;
-  document.getElementById('topbarBadge').textContent = badge;
-  if (name !== 'chat') resetPanel(name);
+  const [t,b]=META[name];
+  document.getElementById('topbarTitle').textContent=t;
+  document.getElementById('topbarTag').textContent=b;
+  if(name!=='chat') resetPanel(name);
 }
 
-function resetPanel(name) {
-  if (name === 'summarize') {
-    document.getElementById('sumText').value = '';
-    document.getElementById('sumResultWrap').style.display = 'none';
-    document.getElementById('sumResult').textContent = '';
-  } else if (name === 'translate') {
-    document.getElementById('transText').value = '';
-    document.getElementById('transOutput').textContent = 'Bản dịch sẽ hiện ở đây...';
-    document.getElementById('transOutput').className = 'translate-output';
-    document.getElementById('charCount').textContent = '0 ký tự';
-    document.getElementById('outputCharCount').textContent = '–';
-    document.getElementById('copyBtn').disabled = true;
-    currentTranslation = '';
-  } else if (name === 'image') {
-    document.getElementById('imageFile').value = '';
-    document.getElementById('imagePreview').style.display = 'none';
-    document.getElementById('uploadContent').style.display = 'block';
-    document.getElementById('imgResultWrap').style.display = 'none';
-  } else if (name === 'chat') {
-    const chatBox = document.getElementById('chatMessages');
-    chatBox.innerHTML = '';
-    const empty = document.createElement('div');
-    empty.className = 'chat-empty'; empty.id = 'chatEmpty';
-    empty.innerHTML = `
-      <div class="chat-empty-icon">✦</div>
-      <h3>Chat với AI Assistant</h3>
-      <p>Đặt câu hỏi hoặc thảo luận bất kỳ chủ đề nào.</p>
-      <div class="chat-suggestions">
-        <div class="suggestion-chip" onclick="useSuggestion('Giải thích AI là gì?')">AI là gì?</div>
-        <div class="suggestion-chip" onclick="useSuggestion('Viết email xin việc chuyên nghiệp')">Viết email xin việc</div>
-        <div class="suggestion-chip" onclick="useSuggestion('Xu hướng công nghệ 2025')">Xu hướng 2025</div>
-        <div class="suggestion-chip" onclick="useSuggestion('Bắt đầu học Python như thế nào?')">Học Python</div>
-      </div>`;
-    chatBox.appendChild(empty);
+function resetPanel(n) {
+  if(n==='summarize'){
+    document.getElementById('sumText').value='';
+    document.getElementById('sumResultWrap').style.display='none';
+    document.getElementById('sumResult').textContent='';
+  } else if(n==='translate'){
+    document.getElementById('transText').value='';
+    const o=document.getElementById('transOut');
+    o.textContent='Bản dịch sẽ hiện ở đây…'; o.className='trans-output';
+    document.getElementById('srcCount').textContent='0 ký tự';
+    document.getElementById('dstCount').textContent='–';
+    document.getElementById('copyBtn').disabled=true;
+    curTrans='';
+  } else if(n==='image'){
+    document.getElementById('imgFile').value='';
+    document.getElementById('imagePreview').style.display='none';
+    document.getElementById('uploadHint').style.display='block';
+    document.getElementById('imgResultWrap').style.display='none';
+  } else if(n==='chat'){
+    rebuildEmpty();
   }
 }
 
-async function callAI(prompt, base64Image = null) {
-  const response = await fetch("/api/claude", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, image: base64Image })
+function rebuildEmpty() {
+  const box=document.getElementById('chatMessages'); box.innerHTML='';
+  const d=document.createElement('div');
+  d.className='chat-empty'; d.id='chatEmpty';
+  d.innerHTML=`
+    <div class="chat-empty-glyph">💬</div>
+    <h3>Chat với AI Assistant Pro</h3>
+    <p>Đặt câu hỏi hoặc thảo luận bất kỳ chủ đề nào</p>
+    <div class="chips">
+      <div class="chip" onclick="useSuggest('AI là gì? Giải thích đơn giản')">AI là gì?</div>
+      <div class="chip" onclick="useSuggest('Viết email xin việc chuyên nghiệp')">Viết email xin việc</div>
+      <div class="chip" onclick="useSuggest('Xu hướng công nghệ 2025')">Xu hướng 2025</div>
+      <div class="chip" onclick="useSuggest('Học Python từ đầu')">Học Python</div>
+    </div>`;
+  box.appendChild(d);
+}
+
+async function callAI(prompt, img=null) {
+  const r=await fetch('/api/claude',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt, image:img})
   });
-  const data = await response.json();
-  if (data.error) throw new Error(data.error);
-  return data.reply;
+  const d=await r.json();
+  if(d.error) throw new Error(d.error);
+  return d.reply;
 }
 
-// SUMMARIZE
 async function runSummarize() {
-  const text = document.getElementById('sumText').value.trim();
-  if (!text) return;
-  const resBox = document.getElementById('sumResult');
-  const wrap = document.getElementById('sumResultWrap');
-  const len = document.getElementById('sumLength').value;
-  wrap.style.display = 'block';
-  resBox.textContent = 'Đang tóm tắt...';
-  resBox.classList.add('loading');
+  const text=document.getElementById('sumText').value.trim(); if(!text) return;
+  const box=document.getElementById('sumResult');
+  const wrap=document.getElementById('sumResultWrap');
+  const len=document.getElementById('sumLength').value;
+  wrap.style.display='block';
+  box.textContent='Đang tóm tắt…'; box.classList.add('loading');
   try {
-    const reply = await callAI(`Hãy tóm tắt ${len} nội dung sau:\n\n${text}`);
-    resBox.textContent = reply;
-    saveHistory('summarize', text, reply);
-  } catch(e) { resBox.textContent = 'Lỗi: ' + e.message; }
-  resBox.classList.remove('loading');
+    const r=await callAI(`Hãy tóm tắt ${len} nội dung sau:\n\n${text}`);
+    box.textContent=r; saveHist('summarize',text,r);
+  } catch(e){box.textContent='Lỗi: '+e.message;}
+  box.classList.remove('loading');
 }
 
-// TRANSLATE
 async function runTranslate() {
-  const text = document.getElementById('transText').value.trim();
-  const lang = document.getElementById('targetLang').value;
-  if (!text) return;
-  const output = document.getElementById('transOutput');
-  output.className = 'translate-output';
-  output.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-  document.getElementById('copyBtn').disabled = true;
+  const text=document.getElementById('transText').value.trim();
+  const lang=document.getElementById('targetLang').value;
+  if(!text) return;
+  const o=document.getElementById('transOut');
+  o.className='trans-output';
+  o.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';
+  document.getElementById('copyBtn').disabled=true;
   try {
-    const reply = await callAI(`Dịch văn bản sau sang ${lang}. Chỉ trả về bản dịch, không giải thích thêm:\n\n${text}`);
-    currentTranslation = reply;
-    output.className = 'translate-output has-content';
-    output.textContent = reply;
-    document.getElementById('outputCharCount').textContent = reply.length + ' ký tự';
-    document.getElementById('copyBtn').disabled = false;
-    saveHistory('translate', text, reply);
-  } catch(e) {
-    output.className = 'translate-output';
-    output.textContent = 'Lỗi: ' + e.message;
+    const r=await callAI(`Dịch văn bản sau sang ${lang}. Chỉ trả về bản dịch, không giải thích:\n\n${text}`);
+    curTrans=r; o.className='trans-output ready'; o.textContent=r;
+    document.getElementById('dstCount').textContent=r.length+' ký tự';
+    document.getElementById('copyBtn').disabled=false;
+    saveHist('translate',text,r);
+  } catch(e){o.className='trans-output'; o.textContent='Lỗi: '+e.message;}
+}
+
+function swapLangs() {
+  const i=document.getElementById('transText');
+  const o=document.getElementById('transOut');
+  if(curTrans){
+    const old=i.value; i.value=curTrans; updateCount();
+    if(old){o.className='trans-output ready';o.textContent=old;curTrans=old;}
+    else{o.className='trans-output';o.textContent='Bản dịch sẽ hiện ở đây…';curTrans='';}
   }
 }
 
-function swapLanguages() {
-  const input = document.getElementById('transText');
-  const output = document.getElementById('transOutput');
-  if (currentTranslation) {
-    const old = input.value;
-    input.value = currentTranslation;
-    updateCharCount();
-    if (old) {
-      output.className = 'translate-output has-content';
-      output.textContent = old;
-      currentTranslation = old;
-    } else {
-      output.textContent = 'Bản dịch sẽ hiện ở đây...';
-      output.className = 'translate-output';
-      currentTranslation = '';
-    }
-  }
+function copyOut() {
+  if(!curTrans) return;
+  navigator.clipboard.writeText(curTrans);
+  const b=document.getElementById('copyBtn');
+  b.textContent='✓ Đã sao chép';
+  setTimeout(()=>b.textContent='📋 Sao chép',1800);
 }
 
-function copyTranslation() {
-  if (!currentTranslation) return;
-  navigator.clipboard.writeText(currentTranslation);
-  const btn = document.getElementById('copyBtn');
-  btn.textContent = '✓ Đã sao chép';
-  setTimeout(() => btn.textContent = '📋 Sao chép', 1800);
-}
+function clearSrc(){ document.getElementById('transText').value=''; updateCount(); }
+function updateCount(){ document.getElementById('srcCount').textContent=document.getElementById('transText').value.length+' ký tự'; }
 
-function clearInput() {
-  document.getElementById('transText').value = '';
-  updateCharCount();
-}
-
-function updateCharCount() {
-  document.getElementById('charCount').textContent = document.getElementById('transText').value.length + ' ký tự';
-}
-
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 'Enter') {
-    if (document.getElementById('panel-translate').classList.contains('active')) runTranslate();
-  }
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='Enter'&&document.getElementById('panel-translate').classList.contains('active')) runTranslate();
 });
 
-// IMAGE
-function previewImage(e) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = document.getElementById('imagePreview');
-    img.src = reader.result; img.style.display = 'block';
-    document.getElementById('uploadContent').style.display = 'none';
+function previewImg(e) {
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=document.getElementById('imagePreview');
+    img.src=r.result; img.style.display='block';
+    document.getElementById('uploadHint').style.display='none';
   };
-  if (e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+  if(e.target.files[0]) r.readAsDataURL(e.target.files[0]);
 }
 
 async function runImageAnalysis() {
-  const file = document.getElementById('imageFile').files[0];
-  if (!file) return alert('Vui lòng chọn ảnh!');
-  const resBox = document.getElementById('imgResult');
-  const wrap = document.getElementById('imgResultWrap');
-  wrap.style.display = 'block';
-  resBox.textContent = 'Đang phân tích hình ảnh...';
-  resBox.classList.add('loading');
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try {
-      const reply = await callAI('Mô tả chi tiết và phân tích hình ảnh này bằng tiếng Việt:', reader.result);
-      resBox.textContent = reply;
-      saveHistory('image', 'Ảnh đã phân tích', reply);
-    } catch(e) { resBox.textContent = 'Lỗi: ' + e.message; }
-    resBox.classList.remove('loading');
+  const f=document.getElementById('imgFile').files[0];
+  if(!f) return alert('Vui lòng chọn ảnh!');
+  const box=document.getElementById('imgResult');
+  const wrap=document.getElementById('imgResultWrap');
+  wrap.style.display='block'; box.textContent='Đang phân tích hình ảnh…'; box.classList.add('loading');
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      const rep=await callAI('Mô tả chi tiết và phân tích hình ảnh này bằng tiếng Việt:',r.result);
+      box.textContent=rep; saveHist('image','Ảnh đã phân tích',rep);
+    }catch(e){box.textContent='Lỗi: '+e.message;}
+    box.classList.remove('loading');
   };
-  reader.readAsDataURL(file);
+  r.readAsDataURL(f);
 }
 
-// CHAT
-function useSuggestion(text) {
-  document.getElementById('chatInput').value = text;
-  sendChat();
-}
+function useSuggest(t){ document.getElementById('chatInput').value=t; sendChat(); }
 
 async function sendChat() {
-  const input = document.getElementById('chatInput');
-  const chatBox = document.getElementById('chatMessages');
-  const msg = input.value.trim();
-  if (!msg) return;
-  const empty = document.getElementById('chatEmpty');
-  if (empty) empty.remove();
-  const now = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
+  const inp=document.getElementById('chatInput');
+  const box=document.getElementById('chatMessages');
+  const msg=inp.value.trim(); if(!msg) return;
+  const e=document.getElementById('chatEmpty'); if(e) e.remove();
+  const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
 
-  chatBox.innerHTML += `
+  box.innerHTML+=`
     <div class="message user">
-      <div class="msg-content">
+      <div class="msg-wrap">
         <div class="msg-meta">Bạn · ${now}</div>
-        <div class="bubble">${escHtml(msg)}</div>
+        <div class="bubble">${esc(msg)}</div>
       </div>
-      <div class="msg-avatar">👤</div>
+      <div class="av">👤</div>
     </div>`;
 
-  input.value = ''; input.style.height = 'auto';
-  chatBox.scrollTop = chatBox.scrollHeight;
+  inp.value=''; inp.style.height='auto'; box.scrollTop=box.scrollHeight;
 
-  const aiId = 'ai' + Date.now();
-  chatBox.innerHTML += `
-    <div class="message ai" id="${aiId}">
-      <div class="msg-avatar">✦</div>
-      <div class="msg-content">
+  const id='ai'+Date.now();
+  box.innerHTML+=`
+    <div class="message ai" id="${id}">
+      <div class="av">✦</div>
+      <div class="msg-wrap">
         <div class="msg-meta">AI Assistant · ${now}</div>
-        <div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+        <div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>
       </div>
     </div>`;
-  chatBox.scrollTop = chatBox.scrollHeight;
+  box.scrollTop=box.scrollHeight;
 
-  try {
-    const reply = await callAI(msg);
-    document.getElementById(aiId).querySelector('.bubble').textContent = reply;
-    saveHistory('chat', msg, reply);
-  } catch(e) {
-    document.getElementById(aiId).querySelector('.bubble').textContent = 'Lỗi kết nối!';
-  }
-  chatBox.scrollTop = chatBox.scrollHeight;
+  try{
+    const r=await callAI(msg);
+    document.getElementById(id).querySelector('.bubble').textContent=r;
+    saveHist('chat',msg,r);
+  }catch(e){document.getElementById(id).querySelector('.bubble').textContent='Lỗi kết nối!';}
+  box.scrollTop=box.scrollHeight;
 }
 
-function escHtml(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function autoH(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+
+function saveHist(type,inp,out){
+  const item={id:Date.now(),title:inp.substring(0,18)+'…',fullIn:inp,fullOut:out};
+  hist[type].unshift(item);
+  if(hist[type].length>5) hist[type].pop();
+  localStorage.setItem('aipro_v6',JSON.stringify(hist));
+  renderHist();
 }
 
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-}
-
-// HISTORY
-function saveHistory(type, input, output) {
-  const item = { id: Date.now(), title: input.substring(0,18)+'…', fullIn: input, fullOut: output };
-  historyData[type].unshift(item);
-  if (historyData[type].length > 5) historyData[type].pop();
-  localStorage.setItem('ai_pro_v4', JSON.stringify(historyData));
-  renderHistory();
-}
-
-function renderHistory() {
-  ['summarize','image','translate','chat'].forEach(type => {
-    const c = document.getElementById('hist-'+type);
-    if (c) c.innerHTML = historyData[type].map(item => `
-      <div class="history-item" onclick="event.stopPropagation();loadHistory('${type}',${item.id})">
-        <span>· ${item.title}</span>
-        <span class="delete-hist" onclick="event.stopPropagation();deleteHistory('${type}',${item.id})">×</span>
+function renderHist(){
+  ['summarize','image','translate','chat'].forEach(t=>{
+    const c=document.getElementById('hist-'+t);
+    if(c) c.innerHTML=hist[t].map(i=>`
+      <div class="history-item" onclick="event.stopPropagation();loadHist('${t}',${i.id})">
+        <span>· ${i.title}</span>
+        <span class="delete-hist" onclick="event.stopPropagation();delHist('${t}',${i.id})">×</span>
       </div>`).join('');
   });
 }
 
-function deleteHistory(type, id) {
-  historyData[type] = historyData[type].filter(i => i.id !== id);
-  localStorage.setItem('ai_pro_v4', JSON.stringify(historyData));
-  renderHistory();
+function delHist(t,id){
+  hist[t]=hist[t].filter(i=>i.id!==id);
+  localStorage.setItem('aipro_v6',JSON.stringify(hist)); renderHist();
 }
 
-function loadHistory(type, id) {
-  const item = historyData[type].find(i => i.id === id);
-  if (!item) return;
-  const navItem = document.querySelector(`.nav-item[onclick*="'${type}'"]`);
-  if (navItem) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('panel-'+type).classList.add('active');
-    navItem.classList.add('active');
-    const [title, badge] = topbarMeta[type];
-    document.getElementById('topbarTitle').textContent = title;
-    document.getElementById('topbarBadge').textContent = badge;
+function loadHist(t,id){
+  const item=hist[t].find(i=>i.id===id); if(!item) return;
+  const nav=document.querySelector(`.nav-item[onclick*="'${t}'"]`);
+  if(nav){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('panel-'+t).classList.add('active');
+    nav.classList.add('active');
+    const [ti,ba]=META[t];
+    document.getElementById('topbarTitle').textContent=ti;
+    document.getElementById('topbarTag').textContent=ba;
   }
-  if (type === 'summarize') {
-    document.getElementById('sumText').value = item.fullIn;
-    document.getElementById('sumResult').textContent = item.fullOut;
-    document.getElementById('sumResultWrap').style.display = 'block';
-  } else if (type === 'translate') {
-    document.getElementById('transText').value = item.fullIn;
-    updateCharCount();
-    const out = document.getElementById('transOutput');
-    out.textContent = item.fullOut;
-    out.className = 'translate-output has-content';
-    currentTranslation = item.fullOut;
-    document.getElementById('outputCharCount').textContent = item.fullOut.length + ' ký tự';
-    document.getElementById('copyBtn').disabled = false;
-  } else if (type === 'image') {
-    document.getElementById('imgResult').textContent = item.fullOut;
-    document.getElementById('imgResultWrap').style.display = 'block';
-  } else if (type === 'chat') {
-    const chatBox = document.getElementById('chatMessages');
-    const e = document.getElementById('chatEmpty');
-    if (e) e.remove();
-    chatBox.innerHTML = `
+  if(t==='summarize'){
+    document.getElementById('sumText').value=item.fullIn;
+    document.getElementById('sumResult').textContent=item.fullOut;
+    document.getElementById('sumResultWrap').style.display='block';
+  } else if(t==='translate'){
+    document.getElementById('transText').value=item.fullIn; updateCount();
+    const o=document.getElementById('transOut');
+    o.textContent=item.fullOut; o.className='trans-output ready';
+    curTrans=item.fullOut;
+    document.getElementById('dstCount').textContent=item.fullOut.length+' ký tự';
+    document.getElementById('copyBtn').disabled=false;
+  } else if(t==='image'){
+    document.getElementById('imgResult').textContent=item.fullOut;
+    document.getElementById('imgResultWrap').style.display='block';
+  } else if(t==='chat'){
+    const box=document.getElementById('chatMessages');
+    const e=document.getElementById('chatEmpty'); if(e) e.remove();
+    box.innerHTML=`
       <div class="message user">
-        <div class="msg-content"><div class="msg-meta">Bạn</div><div class="bubble">${escHtml(item.fullIn)}</div></div>
-        <div class="msg-avatar">👤</div>
+        <div class="msg-wrap"><div class="msg-meta">Bạn</div><div class="bubble">${esc(item.fullIn)}</div></div>
+        <div class="av">👤</div>
       </div>
       <div class="message ai">
-        <div class="msg-avatar">✦</div>
-        <div class="msg-content"><div class="msg-meta">AI Assistant</div><div class="bubble">${escHtml(item.fullOut)}</div></div>
+        <div class="av">✦</div>
+        <div class="msg-wrap"><div class="msg-meta">AI Assistant</div><div class="bubble">${esc(item.fullOut)}</div></div>
       </div>`;
   }
 }
 
-window.onload = init;
+window.onload=init;
 </script>
 </body>
 </html>
